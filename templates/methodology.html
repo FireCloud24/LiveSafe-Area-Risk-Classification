@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Methodology{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Methodology</h1>
+<p class="page-subtitle">
+  How LiveSafe works — data sources, classification logic, and known limitations.
+</p>
+
+<div class="card">
+
+  <div class="method-section">
+    <h3>What this system is</h3>
+    <p>
+      LiveSafe is a multi-dimensional area classification tool, not a predictive
+      safety score. Each local authority is described across four independent
+      dimensions — crime intensity, crime pattern, crime trend, and weather
+      exposure — which are then combined into an overall area profile.
+    </p>
+    <p>
+      All classifications are relative within the 15-area prototype set.
+      A label of "Elevated Crime Level" means elevated compared to the other
+      areas in this prototype, not compared to all areas in England and Wales.
+    </p>
+  </div>
+
+  <hr class="divider">
+
+  <div class="method-section">
+    <h3>Data sources</h3>
+    <table class="method-table">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>What it provides</th>
+          <th>Coverage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>UK Police API</td>
+          <td>Monthly street-level crime incidents, categorised by type and outcome</td>
+          <td>Jan–Dec 2024</td>
+        </tr>
+        <tr>
+          <td>Meteostat</td>
+          <td>Daily weather observations (temperature, precipitation) from nearest station</td>
+          <td>Jan–Dec 2024</td>
+        </tr>
+        <tr>
+          <td>ONS Open Geography Portal</td>
+          <td>Local authority boundary polygons (LAD 2024, EPSG:4326)</td>
+          <td>2024 boundaries</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <div class="method-section">
+    <h3>Classification dimensions</h3>
+
+    <p><strong style="color:var(--accent)">Crime Intensity</strong> — based on average monthly crime count across 2024. Thresholds are set at the 25th, 50th, and 75th percentiles of the 15-area sample.</p>
+    <table class="method-table">
+      <thead><tr><th>Label</th><th>Threshold</th></tr></thead>
+      <tbody>
+        <tr><td>Very Low Recorded Crime</td><td>Below 25th percentile</td></tr>
+        <tr><td>Moderate Crime Level</td><td>25th–50th percentile</td></tr>
+        <tr><td>Elevated Crime Level</td><td>50th–75th percentile</td></tr>
+        <tr><td>Severe Crime Concentration</td><td>Above 75th percentile</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1rem;"><strong style="color:var(--accent)">Crime Pattern</strong> — based on the average share of violent and property crime categories across 2024 months.</p>
+    <table class="method-table">
+      <thead><tr><th>Label</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Violence-Dominant</td><td>Violent share ≥ 30% and greater than property share</td></tr>
+        <tr><td>Property-Crime-Dominant</td><td>Property share ≥ 30% and greater than violent share</td></tr>
+        <tr><td>Mixed Crime Pattern</td><td>Both shares ≥ 20%</td></tr>
+        <tr><td>Low-Complexity Crime Pattern</td><td>Neither category strongly dominant</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1rem;"><strong style="color:var(--accent)">Crime Trend</strong> — based on the linear regression slope of monthly crime counts across 2024 (crimes per month change) and month-to-month variability.</p>
+    <table class="method-table">
+      <thead><tr><th>Label</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Improving</td><td>Slope &lt; −0.5 and low variability</td></tr>
+        <tr><td>Stable</td><td>Slope between −0.5 and +0.5 and low variability</td></tr>
+        <tr><td>Deteriorating</td><td>Slope &gt; +0.5 and low variability</td></tr>
+        <tr><td>Fluctuating</td><td>Month-to-month variability above 75th percentile</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1rem;"><strong style="color:var(--accent)">Weather Exposure</strong> — based on average monthly precipitation, number of cold months (avg temp ≤ 5°C), and precipitation variability.</p>
+    <table class="method-table">
+      <thead><tr><th>Label</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Mild Conditions</td><td>Low precipitation and ≤ 1 cold month</td></tr>
+        <tr><td>Rain-Exposed</td><td>Precipitation above 66th percentile</td></tr>
+        <tr><td>Cold-Exposed</td><td>≥ 4 cold months</td></tr>
+        <tr><td>Seasonally Volatile</td><td>Precipitation variability above 75th percentile</td></tr>
+        <tr><td>High Weather Stress</td><td>Both ≥ 4 cold months and high precipitation</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <div class="method-section">
+    <h3>Overall area profile derivation</h3>
+    <p>
+      The overall profile is derived from the four dimension labels through
+      explicit conditional logic — not a weighted formula.
+    </p>
+    <table class="method-table">
+      <thead><tr><th>Profile</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr><td>Persistent Multi-Factor Risk Area</td><td>High/severe crime AND adverse weather</td></tr>
+        <tr><td>Emerging Risk Area</td><td>High/severe crime AND deteriorating trend</td></tr>
+        <tr><td>Volatile Risk Area</td><td>High/severe crime AND fluctuating trend</td></tr>
+        <tr><td>Crime-Sensitive Area</td><td>High/severe crime (no other compounding factor)</td></tr>
+        <tr><td>Weather-Sensitive Area</td><td>Adverse weather AND low/moderate crime</td></tr>
+        <tr><td>Structurally Exposed Area</td><td>Adverse weather AND moderate-high crime</td></tr>
+        <tr><td>Stable Low-Risk Area</td><td>Low/moderate crime AND stable or improving trend</td></tr>
+        <tr><td>Mixed-Risk Area</td><td>All other combinations</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <div class="method-section">
+    <h3>Limitations</h3>
+    <p>
+      Crime data from the UK Police API represents <em>recorded</em> crime only.
+      Underreporting, policing priorities, and force-level recording practices
+      all affect the numbers.
+    </p>
+    <p>
+      Weather data is sourced from the nearest Meteostat station to the LA centroid.
+      For large or coastal LAs, the nearest station may not be representative
+      of the whole area.
+    </p>
+    <p>
+      All percentile thresholds are computed within this 15-area prototype set.
+      The labels are comparative — they describe each area relative to the others
+      in this sample, not relative to the national distribution.
+    </p>
+    <p>
+      This system is designed for exploration and decision support.
+      It is not a risk prediction engine and should not be used as the sole
+      basis for any decision.
+    </p>
+  </div>
+
+</div>
+{% endblock %}

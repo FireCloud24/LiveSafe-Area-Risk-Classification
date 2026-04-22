@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% block title %}About the Data{% endblock %}
+
+{% block extra_head %}
+<style>
+.about-tabs { display:flex; gap:0.5rem; margin-bottom:1.75rem; flex-wrap:wrap; }
+.about-tab {
+  padding:0.45rem 1.1rem; border-radius:20px; cursor:pointer;
+  border:1px solid rgba(255,255,255,0.1);
+  background:transparent; color:var(--mist); font-family:var(--font-sans);
+  font-size:0.83rem; transition:all 0.15s;
+}
+.about-tab.active, .about-tab:hover {
+  background:var(--accent); border-color:var(--accent);
+  color:#0d1b2a; font-weight:600;
+}
+.about-panel { display:none; }
+.about-panel.active { display:block; }
+
+.about-section { margin-bottom:2rem; }
+.about-section h3 {
+  font-size:1rem; font-weight:600; color:var(--cloud);
+  margin-bottom:0.75rem; padding-bottom:0.5rem;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.about-section p { font-size:0.88rem; color:var(--mist); line-height:1.8; margin-bottom:0.75rem; }
+.about-section p strong { color:var(--cloud); }
+.about-section ul { padding-left:1.25rem; }
+.about-section ul li { font-size:0.86rem; color:var(--mist); line-height:1.8; margin-bottom:0.25rem; }
+.about-section ul li strong { color:var(--cloud); }
+
+.source-card {
+  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; padding:1rem 1.25rem; margin-bottom:0.85rem;
+  display:flex; gap:1rem; align-items:flex-start;
+}
+.source-icon { font-size:1.5rem; flex-shrink:0; }
+.source-name { font-weight:600; color:var(--cloud); font-size:0.9rem; }
+.source-desc { font-size:0.82rem; color:var(--mist); margin-top:0.2rem; line-height:1.6; }
+.source-tag { font-size:0.7rem; font-family:var(--font-mono); color:var(--accent); margin-top:0.3rem; display:block; }
+
+.rule-table { width:100%; border-collapse:collapse; font-size:0.84rem; margin:0.75rem 0; }
+.rule-table thead th {
+  padding:0.5rem 0.75rem; font-size:0.7rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.07em; color:var(--mist);
+  text-align:left; border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.rule-table tbody td { padding:0.55rem 0.75rem; border-bottom:1px solid rgba(255,255,255,0.04); }
+.rule-table tbody tr:hover { background:rgba(255,255,255,0.02); }
+
+.limitation-item {
+  display:flex; gap:0.75rem; align-items:flex-start;
+  padding:0.85rem 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.limitation-item:last-child { border-bottom:none; }
+.lim-icon { font-size:1rem; flex-shrink:0; margin-top:2px; }
+.lim-title { font-size:0.88rem; font-weight:600; color:var(--cloud); margin-bottom:0.2rem; }
+.lim-desc { font-size:0.82rem; color:var(--mist); line-height:1.65; }
+
+.detail-toggle {
+  display:inline-block; margin-top:0.5rem; font-size:0.78rem;
+  color:var(--accent); cursor:pointer; user-select:none;
+}
+.detail-content { display:none; margin-top:0.5rem; }
+.detail-content.open { display:block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">About the Data</h1>
+<p class="page-subtitle">How LiveSafe works, where the data comes from, and what the results actually mean.</p>
+
+<div class="about-tabs">
+  <button class="about-tab active" onclick="showTab('what')">What is LiveSafe?</button>
+  <button class="about-tab" onclick="showTab('data')">Data Sources</button>
+  <button class="about-tab" onclick="showTab('how')">How It Classifies</button>
+  <button class="about-tab" onclick="showTab('limits')">Limitations</button>
+  <button class="about-tab" onclick="showTab('ethics')">Ethics &amp; Use</button>
+</div>
+
+<!-- Tab: What is LiveSafe -->
+<div class="about-panel active card" id="tab-what">
+  <div class="about-section">
+    <h3>What LiveSafe does</h3>
+    <p>
+      LiveSafe is an area risk classification system — it takes raw crime and weather data and
+      turns it into <strong>plain-language labels</strong> that describe each local authority area
+      across four dimensions. It's designed so a first-time homebuyer, a property investor,
+      or a council planner can all get useful information from the same system.
+    </p>
+    <p>
+      Rather than giving each area a single number (like a score out of 100), LiveSafe describes
+      areas across <strong>four independent dimensions</strong>:
+    </p>
+    <ul>
+      <li><strong>Crime Intensity</strong> — how much crime is recorded relative to other areas</li>
+      <li><strong>Crime Pattern</strong> — whether crime is mostly violent, property-related, or mixed</li>
+      <li><strong>Crime Trend</strong> — whether crime is improving, worsening, or fluctuating through 2024</li>
+      <li><strong>Weather Exposure</strong> — how much rainfall, cold, and seasonal variation the area experiences</li>
+    </ul>
+    <p>
+      These four labels combine into an <strong>overall profile</strong> — for example,
+      "Volatile Risk Area" means high crime levels with an unpredictable month-to-month pattern.
+      "Stable Low-Risk Area" means consistently low crime with an improving trend.
+    </p>
+  </div>
+  <div class="about-section">
+    <h3>What LiveSafe is NOT</h3>
+    <ul>
+      <li>It is <strong>not a predictive policing tool</strong> — it does not predict where crime will happen or recommend police deployment</li>
+      <li>It is <strong>not a safety score</strong> — it describes patterns, not guarantees</li>
+      <li>It is <strong>not nationally representative</strong> — the prototype covers 15 areas only, and all comparisons are relative within that set</li>
+      <li>It should <strong>not be the sole basis for any decision</strong> — it is a decision-support tool, not a decision-making engine</li>
+    </ul>
+  </div>
+  <div class="about-section">
+    <h3>Who built it and why</h3>
+    <p>
+      LiveSafe was built as a final-year Data Science &amp; AI project by Myo Satt Kyaw.
+      The goal was to demonstrate that <strong>transparent, rule-based classification</strong> —
+      where every label can be explained — can be more appropriate than opaque machine learning
+      models in high-stakes civilian contexts.
+    </p>
+    <p>
+      The system covers <strong>15 local authority areas</strong> across England and Wales,
+      selected to represent a range of urban, rural, coastal, and mixed geographies:
+      Leeds, Sheffield, Bristol, Coventry, Newcastle, Leicester, Norwich, Exeter,
+      County Durham, Wiltshire, Herefordshire, North Yorkshire, Cornwall, Cardiff, and Swansea.
+    </p>
+  </div>
+</div>
+
+<!-- Tab: Data Sources -->
+<div class="about-panel card" id="tab-data">
+  <div class="about-section">
+    <h3>Where the data comes from</h3>
+
+    <div class="source-card">
+      <span class="source-icon">🚔</span>
+      <div>
+        <div class="source-name">UK Police API</div>
+        <div class="source-desc">
+          Street-level crime data for England and Wales, provided by the Home Office via data.police.uk.
+          For each area, the system downloads every recorded crime incident within the local authority
+          boundary polygon for each month of 2024 — giving 669,646 records in total.
+          Each record includes the crime category (e.g. "violent-crime", "burglary") and outcome status.
+        </div>
+        <span class="source-tag">data.police.uk/api — free, no API key required</span>
+      </div>
+    </div>
+
+    <div class="source-card">
+      <span class="source-icon">🌦</span>
+      <div>
+        <div class="source-name">Meteostat</div>
+        <div class="source-desc">
+          Daily weather observations (temperature, precipitation) from the nearest weather station
+          to each local authority's geographic centre. Aggregated to monthly averages and totals.
+          5,490 daily records collected across all 15 areas.
+        </div>
+        <span class="source-tag">meteostat.net — free Python library</span>
+      </div>
+    </div>
+
+    <div class="source-card">
+      <span class="source-icon">🗺</span>
+      <div>
+        <div class="source-name">ONS Open Geography Portal</div>
+        <div class="source-desc">
+          Local Authority District boundary polygons (LAD 2024 boundaries, EPSG:4326 coordinate system).
+          Used to query the Police API for crimes within each area, calculate geographic centroids
+          for weather lookups, and define the 1,527 neighbourhoods via police force boundaries.
+        </div>
+        <span class="source-tag">geoportal.statistics.gov.uk — free, open licence</span>
+      </div>
+    </div>
+
+    <div class="source-card">
+      <span class="source-icon">📊</span>
+      <div>
+        <div class="source-name">ONS Index of Multiple Deprivation 2019</div>
+        <div class="source-desc">
+          Used for external validation only — not used in building the classification system.
+          The IMD crime domain scores are compared against LiveSafe's crime intensity rankings
+          using Spearman rank correlation to verify the system captures real patterns.
+          Result: ρ = 0.74 (strong positive, p &lt; 0.01).
+        </div>
+        <span class="source-tag">MHCLG — English Indices of Deprivation 2019</span>
+      </div>
+    </div>
+
+    <div class="source-card">
+      <span class="source-icon">📍</span>
+      <div>
+        <div class="source-name">Postcodes.io</div>
+        <div class="source-desc">
+          Used for the postcode search feature. Translates a UK postcode into latitude/longitude
+          coordinates and local authority code, allowing the system to identify which area a
+          postcode falls in and find the nearest neighbourhood centroid.
+        </div>
+        <span class="source-tag">postcodes.io — free, no API key required</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: How It Classifies -->
+<div class="about-panel card" id="tab-how">
+  <div class="about-section">
+    <h3>Why rules, not a black box?</h3>
+    <p>
+      Classification systems used for housing, investment, or public policy need to be
+      <strong>explainable</strong>. If a resident asks "why is my area labelled high-risk?",
+      the system should be able to give a clear answer — not "the algorithm decided."
+    </p>
+    <p>
+      LiveSafe uses <strong>transparent rule-based classification</strong> as its core method,
+      justified by Rudin (2019): interpretable models should be preferred in high-stakes
+      decision domains because they can achieve comparable accuracy while being explainable
+      to non-technical users.
+    </p>
+  </div>
+  <div class="about-section">
+    <h3>Crime Intensity — how it's calculated</h3>
+    <p>
+      Based on each area's average monthly crime count across 2024.
+      Thresholds are set at the <strong>25th, 50th, and 75th percentiles</strong> of the 15-area sample,
+      so labels are always relative comparisons — "Severe" means in the top 25% of this dataset.
+    </p>
+    <table class="rule-table">
+      <thead><tr><th>Label</th><th>Threshold</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-success">Very Low Recorded Crime</span></td><td>Below 25th percentile</td></tr>
+        <tr><td><span class="badge badge-info">Moderate Crime Level</span></td><td>25th–50th percentile</td></tr>
+        <tr><td><span class="badge badge-warning">Elevated Crime Level</span></td><td>50th–75th percentile</td></tr>
+        <tr><td><span class="badge badge-danger">Severe Crime Concentration</span></td><td>Above 75th percentile</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="about-section">
+    <h3>Crime Trend — how it's calculated</h3>
+    <p>
+      A <strong>linear regression slope</strong> is fitted through the 12 monthly crime counts.
+      A positive slope means crime increased month-on-month; negative means it fell.
+      <strong>Variability</strong> (standard deviation of monthly counts) is checked first —
+      a highly volatile area is labelled "Fluctuating" regardless of slope direction,
+      because a trend is meaningless if counts swing wildly each month.
+    </p>
+    <table class="rule-table">
+      <thead><tr><th>Label</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-warning">Fluctuating</span></td><td>Month-to-month variability above 75th percentile (checked first)</td></tr>
+        <tr><td><span class="badge badge-success">Improving</span></td><td>Slope &lt; −0.5 (and not fluctuating)</td></tr>
+        <tr><td><span class="badge badge-info">Stable</span></td><td>Slope between −0.5 and +0.5</td></tr>
+        <tr><td><span class="badge badge-danger">Deteriorating</span></td><td>Slope &gt; +0.5 (and not fluctuating)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="about-section">
+    <h3>Overall Profile — how it combines</h3>
+    <p>
+      The four dimension labels are combined through priority-ordered logic — not a weighted formula,
+      which would require value judgements about how to balance crime against weather.
+    </p>
+    <table class="rule-table">
+      <thead><tr><th>Profile</th><th>Condition</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge badge-danger">Persistent Multi-Factor Risk Area</span></td><td>High/severe crime AND adverse weather</td></tr>
+        <tr><td><span class="badge badge-orange">Emerging Risk Area</span></td><td>High/severe crime AND deteriorating trend</td></tr>
+        <tr><td><span class="badge badge-orange">Volatile Risk Area</span></td><td>High/severe crime AND fluctuating trend</td></tr>
+        <tr><td><span class="badge badge-warning">Crime-Sensitive Area</span></td><td>High/severe crime only</td></tr>
+        <tr><td><span class="badge badge-info">Weather-Sensitive Area</span></td><td>Adverse weather AND low/moderate crime</td></tr>
+        <tr><td><span class="badge badge-info">Structurally Exposed Area</span></td><td>Adverse weather AND moderate-high crime</td></tr>
+        <tr><td><span class="badge badge-success">Stable Low-Risk Area</span></td><td>Low/moderate crime AND stable or improving</td></tr>
+        <tr><td><span class="badge badge-secondary">Mixed-Risk Area</span></td><td>All other combinations</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tab: Limitations -->
+<div class="about-panel card" id="tab-limits">
+  <div class="about-section">
+    <h3>Known limitations — be aware of these</h3>
+    <div class="limitation-item">
+      <span class="lim-icon">📉</span>
+      <div>
+        <div class="lim-title">Recorded crime ≠ actual crime</div>
+        <div class="lim-desc">The Crime Survey for England and Wales consistently finds roughly twice as many incidents as police records capture. Areas with lower recorded crime may have high actual crime if reporting rates are low. LiveSafe only uses what police record.</div>
+      </div>
+    </div>
+    <div class="limitation-item">
+      <span class="lim-icon">📐</span>
+      <div>
+        <div class="lim-title">Relative labels within 15 areas only</div>
+        <div class="lim-desc">"Severe Crime Concentration" means in the top 25% of this 15-area prototype — not of all areas in England and Wales. An area labelled "Very Low" here might rank differently in a national comparison.</div>
+      </div>
+    </div>
+    <div class="limitation-item">
+      <span class="lim-icon">🗺</span>
+      <div>
+        <div class="lim-title">Boundary simplification</div>
+        <div class="lim-desc">The Police API rejects overly complex polygon queries, so some LA boundaries were simplified before querying. This introduces minor geographic measurement error — a small number of crimes near boundaries may be excluded or mis-attributed.</div>
+      </div>
+    </div>
+    <div class="limitation-item">
+      <span class="lim-icon">🌦</span>
+      <div>
+        <div class="lim-title">Single weather station per area</div>
+        <div class="lim-desc">Weather data comes from the nearest Meteostat station to each LA's geographic centre. For large or coastal areas (Cornwall, North Yorkshire), the nearest station may not represent the whole area's weather.</div>
+      </div>
+    </div>
+    <div class="limitation-item">
+      <span class="lim-icon">📅</span>
+      <div>
+        <div class="lim-title">One year of data</div>
+        <div class="lim-desc">All analysis covers January–December 2024 only. Crime trends are based on 12 monthly data points — a short window that makes trend detection sensitive to individual unusual months. Long-term patterns may differ.</div>
+      </div>
+    </div>
+    <div class="limitation-item">
+      <span class="lim-icon">🔮</span>
+      <div>
+        <div class="lim-title">Forecasts have wide uncertainty ranges</div>
+        <div class="lim-desc">The linear regression forecasts show 95% confidence intervals that are deliberately wide. This is honest — forecasting crime from 12 data points carries high uncertainty. Treat projections as indicative direction, not precise predictions.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Ethics & Use -->
+<div class="about-panel card" id="tab-ethics">
+  <div class="about-section">
+    <h3>Ethical design choices</h3>
+    <p>
+      Several design decisions in LiveSafe were made specifically to avoid known harms
+      in area risk classification systems.
+    </p>
+    <ul>
+      <li>
+        <strong>Not a predictive policing tool.</strong> LiveSafe does not predict where crime will
+        occur, does not target individuals, and does not recommend police deployment.
+        Research by Lum and Isaac (2016) shows predictive systems trained on arrest data
+        systematically reproduce racial and socioeconomic biases in historical policing patterns.
+      </li>
+      <li>
+        <strong>No single score.</strong> A single number like "Bristol = 72" is indefensible when
+        someone asks why. Presenting dimensions separately avoids the value judgements that come
+        with combining different types of risk into one number (Noble et al., 2019).
+      </li>
+      <li>
+        <strong>Relative, not absolute labels.</strong> All labels are explicitly comparative within
+        the dataset. This prevents the system from permanently stigmatising areas with strong
+        historical labels that may not reflect current reality.
+      </li>
+      <li>
+        <strong>Open data only.</strong> No proprietary, personal, or sensitive data is used.
+        All sources are publicly available and free to access.
+      </li>
+    </ul>
+  </div>
+  <div class="about-section">
+    <h3>Appropriate uses</h3>
+    <ul>
+      <li>Comparing areas when choosing where to live, rent, or invest</li>
+      <li>Identifying areas for further research or investigation by planners</li>
+      <li>Educational exploration of crime data patterns</li>
+      <li>As one input among many in a property or investment analysis</li>
+    </ul>
+  </div>
+  <div class="about-section">
+    <h3>Inappropriate uses</h3>
+    <ul>
+      <li>As the sole basis for refusing a tenancy, mortgage, or loan application</li>
+      <li>For targeting individuals or communities based on area labels</li>
+      <li>For police resource deployment or operational decisions</li>
+      <li>As a substitute for current, verified local information</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showTab(id) {
+  document.querySelectorAll('.about-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.about-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+{% endblock %}

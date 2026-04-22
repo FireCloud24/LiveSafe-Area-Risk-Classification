@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Compare Areas{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Compare Areas</h1>
+<p class="page-subtitle">Select two local authority areas to compare them side by side.</p>
+
+<form method="GET" action="/compare">
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label" for="a">Area A</label>
+      <select class="form-select" id="a" name="a">
+        <option value="">— Select —</option>
+        {% for area in areas %}
+          <option value="{{ area.la_code }}"
+            {% if result_a and result_a.la_code == area.la_code %}selected{% endif %}>
+            {{ area.la_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="display:flex;align-items:flex-end;padding-bottom:0.1rem;color:var(--slate);font-family:var(--font-mono);font-size:0.9rem;">vs</div>
+    <div class="form-group">
+      <label class="form-label" for="b">Area B</label>
+      <select class="form-select" id="b" name="b">
+        <option value="">— Select —</option>
+        {% for area in areas %}
+          <option value="{{ area.la_code }}"
+            {% if result_b and result_b.la_code == area.la_code %}selected{% endif %}>
+            {{ area.la_name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Compare</button>
+  </div>
+</form>
+
+{% if result_a or result_b %}
+<div class="compare-grid">
+
+  <!-- Area A -->
+  {% if result_a %}
+  <div>
+    <div class="card">
+      <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:0.4rem;">{{ result_a.la_name }}</h2>
+      <code style="font-size:0.75rem;color:var(--slate);">{{ result_a.la_code }}</code>
+      <div style="margin-top:0.75rem;">
+        <span class="badge badge-lg badge-{{ profile_badge_color(result_a.overall_profile) }}">
+          {{ result_a.overall_profile }}
+        </span>
+      </div>
+      <div class="interpretation" style="margin-top:1rem;font-size:0.88rem;">
+        {{ result_a.interpretation | safe }}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div class="section-title">Risk dimensions</div>
+      <div class="dimension-list">
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Intensity</span>
+          <span class="badge badge-{{ intensity_color(result_a.crime_intensity_label) }}">
+            {{ result_a.crime_intensity_label }}
+          </span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Pattern</span>
+          <span class="badge badge-secondary">{{ result_a.crime_pattern_label }}</span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Trend</span>
+          <span class="badge badge-{{ trend_color(result_a.crime_trend_label) }}">
+            {{ result_a.crime_trend_label }}
+          </span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Weather Exposure</span>
+          <span class="badge badge-{{ weather_color(result_a.weather_exposure_label) }}">
+            {{ result_a.weather_exposure_label }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div class="section-title">Key metrics</div>
+      <div class="metric-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="metric-card">
+          <div class="metric-label">Avg monthly crimes</div>
+          <div class="metric-value">{{ result_a.avg_monthly_crimes | round(0) | int }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Violent share</div>
+          <div class="metric-value">{{ (result_a.avg_violent_share * 100) | round(1) }}<span class="metric-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Monthly rainfall</div>
+          <div class="metric-value">{{ result_a.avg_monthly_prcp | round(1) }}<span class="metric-unit">mm</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg temp</div>
+          <div class="metric-value">{{ result_a.avg_tavg | round(1) }}<span class="metric-unit">°C</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--slate);">
+    Select area A above
+  </div>
+  {% endif %}
+
+  <!-- Area B -->
+  {% if result_b %}
+  <div>
+    <div class="card">
+      <h2 style="font-size:1.2rem;font-weight:600;margin-bottom:0.4rem;">{{ result_b.la_name }}</h2>
+      <code style="font-size:0.75rem;color:var(--slate);">{{ result_b.la_code }}</code>
+      <div style="margin-top:0.75rem;">
+        <span class="badge badge-lg badge-{{ profile_badge_color(result_b.overall_profile) }}">
+          {{ result_b.overall_profile }}
+        </span>
+      </div>
+      <div class="interpretation" style="margin-top:1rem;font-size:0.88rem;">
+        {{ result_b.interpretation | safe }}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div class="section-title">Risk dimensions</div>
+      <div class="dimension-list">
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Intensity</span>
+          <span class="badge badge-{{ intensity_color(result_b.crime_intensity_label) }}">
+            {{ result_b.crime_intensity_label }}
+          </span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Pattern</span>
+          <span class="badge badge-secondary">{{ result_b.crime_pattern_label }}</span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Trend</span>
+          <span class="badge badge-{{ trend_color(result_b.crime_trend_label) }}">
+            {{ result_b.crime_trend_label }}
+          </span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Weather Exposure</span>
+          <span class="badge badge-{{ weather_color(result_b.weather_exposure_label) }}">
+            {{ result_b.weather_exposure_label }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem;">
+      <div class="section-title">Key metrics</div>
+      <div class="metric-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="metric-card">
+          <div class="metric-label">Avg monthly crimes</div>
+          <div class="metric-value">{{ result_b.avg_monthly_crimes | round(0) | int }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Violent share</div>
+          <div class="metric-value">{{ (result_b.avg_violent_share * 100) | round(1) }}<span class="metric-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Monthly rainfall</div>
+          <div class="metric-value">{{ result_b.avg_monthly_prcp | round(1) }}<span class="metric-unit">mm</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg temp</div>
+          <div class="metric-value">{{ result_b.avg_tavg | round(1) }}<span class="metric-unit">°C</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card" style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--slate);">
+    Select area B above
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}

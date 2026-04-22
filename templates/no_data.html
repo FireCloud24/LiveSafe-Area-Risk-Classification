@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Data Not Found{% endblock %}
+{% block content %}
+<div class="no-data-wrap">
+  <div style="font-size:3rem;margin-bottom:1.5rem;opacity:0.4;">◈</div>
+  <h2 style="font-size:1.4rem;margin-bottom:0.75rem;color:var(--cloud);">Pipeline output not found</h2>
+  <p style="margin-bottom:1.5rem;line-height:1.7;">
+    The classified data file doesn't exist yet.<br>
+    Run the pipeline first:
+  </p>
+  <code>python scripts/run_pipeline.py</code>
+  <p style="margin-top:1.5rem;font-size:0.85rem;">
+    Then restart the app with <code>python app.py</code>
+  </p>
+</div>
+{% endblock %}

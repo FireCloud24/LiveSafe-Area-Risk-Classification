@@ -1,0 +1,5 @@
+cluster_name,count,avg_crimes,avg_violent,avg_property,avg_trend
+Low Activity,461,48.732,57.9,13.7,-0.165
+Moderate Activity,653,92.146,47.8,21.9,0.468
+Elevated Activity,375,158.715,40.8,33.3,-0.995
+High Activity,38,1040.746,46.8,28.3,5.594

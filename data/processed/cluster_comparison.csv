@@ -1,0 +1,16 @@
+la_name,cluster_name,overall_profile,crime_intensity_label,avg_monthly_crimes,avg_violent_share,crime_trend_slope,avg_monthly_prcp
+County Durham,Elevated Activity Cluster,Emerging Risk Area,Severe Crime Concentration,5047,41.4,11.0,65.6
+North Yorkshire,Elevated Activity Cluster,Mixed-Risk Area,Moderate Crime Level,3552,42.7,1.5,65.5
+Sheffield,Elevated Activity Cluster,Crime-Sensitive Area,Severe Crime Concentration,5622,40.5,-0.98,75.8
+Newcastle upon Tyne,Elevated Activity Cluster,Emerging Risk Area,Elevated Crime Level,3883,38.7,1.08,76.7
+Leicester,High Activity Cluster,Emerging Risk Area,Elevated Crime Level,4174,48.7,19.62,71.2
+"Bristol, City of",High Activity Cluster,Volatile Risk Area,Severe Crime Concentration,5692,47.8,23.5,96.4
+Leeds,High Activity Cluster,Volatile Risk Area,Severe Crime Concentration,9326,48.3,24.95,75.7
+"Herefordshire, County of",Low Activity Cluster,Stable Low-Risk Area,Very Low Recorded Crime,1018,48.0,-7.71,81.6
+Cornwall,Low Activity Cluster,Weather-Sensitive Area,Moderate Crime Level,3054,48.9,0.29,102.8
+Wiltshire,Low Activity Cluster,Mixed-Risk Area,Moderate Crime Level,2608,43.4,14.44,87.6
+Exeter,Low Activity Cluster,Weather-Sensitive Area,Very Low Recorded Crime,1272,43.7,3.25,90.3
+Norwich,Low Activity Cluster,Mixed-Risk Area,Very Low Recorded Crime,1533,45.8,3.09,56.6
+Swansea,Low Activity Cluster,Stable Low-Risk Area,Very Low Recorded Crime,1903,48.4,-17.4,101.6
+Coventry,Moderate Activity Cluster,Stable Low-Risk Area,Moderate Crime Level,3403,46.2,-19.19,69.5
+Cardiff,Moderate Activity Cluster,Volatile Risk Area,Elevated Crime Level,3717,41.3,-25.71,103.4

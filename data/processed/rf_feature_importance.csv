@@ -1,0 +1,14 @@
+feature,importance,importance_pct
+avg_monthly_crimes,0.6082769368740544,60.83
+trend_slope,0.09663722677394751,9.66
+violent_share,0.061812423581239166,6.18
+property_share,0.05604595007416071,5.6
+la_avg_tavg,0.030346405581734084,3.03
+la_prcp_variability,0.029450704152233557,2.95
+la_avg_monthly_prcp,0.028506342587652472,2.85
+la_crime_trend_slope,0.02087252872652421,2.09
+la_avg_property_share,0.017775060171940155,1.78
+la_avg_monthly_crimes,0.017007520119458778,1.7
+la_crime_variability,0.01666955081331444,1.67
+la_avg_violent_share,0.013639946080524516,1.36
+la_cold_month_count,0.0029594044632158026,0.3

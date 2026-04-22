@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+{% block title %}Crime Trends{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Overview banner (compact) ───────────────────────────────────────── */
+.trends-intro {
+  background: rgba(62,207,207,0.05);
+  border: 1px solid rgba(62,207,207,0.15);
+  border-radius: 10px; padding: 0.85rem 1.1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.83rem; color: var(--mist); line-height: 1.6;
+}
+.trends-intro strong { color: var(--cloud); }
+
+/* ── Two-column chart grid ───────────────────────────────────────────── */
+.trends-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 860px) {
+  .trends-grid { grid-template-columns: 1fr; }
+}
+
+.trends-grid.wide-right {
+  grid-template-columns: 1fr 1.3fr;
+}
+@media (max-width: 860px) {
+  .trends-grid.wide-right { grid-template-columns: 1fr; }
+}
+
+/* ── Compact chart card ──────────────────────────────────────────────── */
+.mini-chart-card {
+  background: var(--card-bg, #162032);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 1rem 1.1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+}
+.mini-chart-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 0.5rem; margin-bottom: 0.35rem;
+}
+.mini-chart-title {
+  font-size: 0.95rem; font-weight: 600; color: var(--cloud);
+  margin: 0; letter-spacing: -0.01em;
+}
+.mini-chart-sub {
+  font-size: 0.72rem; color: var(--mist); margin-top: 0.15rem;
+  line-height: 1.4;
+}
+.mini-source-tag {
+  font-size: 0.62rem; font-family: var(--font-mono); color: var(--slate);
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 3px; padding: 0.12rem 0.4rem;
+  white-space: nowrap; flex-shrink: 0;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.mini-chart-body {
+  position: relative;
+  margin-top: 0.5rem;
+  flex: 1;
+  min-height: 200px;
+}
+
+/* ── Compact insight note ────────────────────────────────────────────── */
+.mini-note {
+  font-size: 0.72rem; color: var(--mist); line-height: 1.5;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255,255,255,0.02);
+  border-left: 2px solid rgba(62,207,207,0.4);
+  border-radius: 3px;
+  margin-top: 0.6rem;
+}
+.mini-note strong { color: var(--cloud); font-weight: 600; }
+
+/* ── Mini inline legend ──────────────────────────────────────────────── */
+.mini-legend {
+  display: flex; flex-wrap: wrap; gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+.mini-leg-dot {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.68rem; color: var(--mist);
+}
+.mini-leg-swatch {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* ── Action row ──────────────────────────────────────────────────────── */
+.action-row {
+  display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;
+  margin-top: 1.5rem; padding: 1rem 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Crime Trends</h1>
+<p class="page-subtitle">How crime patterns look across 15 UK areas.</p>
+
+<!-- Intro -->
+<div class="trends-intro">
+  <strong>ℹ Data:</strong> 2024 recorded crime from the UK Police API — over
+  <strong>669,000 reports</strong> across 15 local authority areas. Recorded crime
+  undercounts actual crime since not everything is reported.
+</div>
+
+<!-- Row 1: Crime volume + Crime mix ──────────────────────────────────── -->
+<div class="trends-grid">
+
+  <div class="mini-chart-card">
+    <div class="mini-chart-header">
+      <div>
+        <h2 class="mini-chart-title">Monthly crime volume</h2>
+        <div class="mini-chart-sub">Avg crimes recorded per month, 2024</div>
+      </div>
+      <span class="mini-source-tag">Police API</span>
+    </div>
+    <div class="mini-chart-body"><canvas id="chartCrimes"></canvas></div>
+    <div class="mini-legend">
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#f06060"></span>Severe</span>
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#f0b429"></span>Elevated</span>
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#3ecfcf"></span>Moderate</span>
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#4caf7d"></span>Very Low</span>
+    </div>
+    <div class="mini-note">
+      <strong>What this shows:</strong> Leeds and Bristol record the most monthly crimes. Herefordshire, Exeter, and Swansea record the fewest.
+    </div>
+  </div>
+
+  <div class="mini-chart-card">
+    <div class="mini-chart-header">
+      <div>
+        <h2 class="mini-chart-title">Crime composition by type</h2>
+        <div class="mini-chart-sub">Violent vs property vs other offences</div>
+      </div>
+      <span class="mini-source-tag">Police API</span>
+    </div>
+    <div class="mini-chart-body"><canvas id="chartShares"></canvas></div>
+    <div class="mini-note">
+      <strong>What this shows:</strong> Violent crime accounts for 40–49% of total crime across nearly all areas — a remarkably consistent pattern.
+    </div>
+  </div>
+
+</div>
+
+<!-- Row 2: Trend slopes + Rainfall ───────────────────────────────────── -->
+<div class="trends-grid">
+
+  <div class="mini-chart-card">
+    <div class="mini-chart-header">
+      <div>
+        <h2 class="mini-chart-title">Crime direction (trend slope)</h2>
+        <div class="mini-chart-sub">Crimes added/removed per month through 2024</div>
+      </div>
+      <span class="mini-source-tag">Derived</span>
+    </div>
+    <div class="mini-chart-body"><canvas id="chartTrends"></canvas></div>
+    <div class="mini-legend">
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#f06060"></span>Deteriorating</span>
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#8fa8c0"></span>Stable</span>
+      <span class="mini-leg-dot"><span class="mini-leg-swatch" style="background:#4caf7d"></span>Improving</span>
+    </div>
+    <div class="mini-note">
+      <strong>What this shows:</strong> Positive = crime trending upwards. Slope is fitted through the 12 monthly counts — so +10 means ~10 more crimes per month through the year.
+    </div>
+  </div>
+
+  <div class="mini-chart-card">
+    <div class="mini-chart-header">
+      <div>
+        <h2 class="mini-chart-title">Monthly rainfall</h2>
+        <div class="mini-chart-sub">Avg rainfall mm/month, 2024</div>
+      </div>
+      <span class="mini-source-tag">Meteostat</span>
+    </div>
+    <div class="mini-chart-body"><canvas id="chartRain"></canvas></div>
+    <div class="mini-note">
+      <strong>What this shows:</strong> Cornwall and Exeter are the wettest areas (&gt;90mm/month). Northern cities receive significantly less rainfall than the south-west.
+    </div>
+  </div>
+
+</div>
+
+<!-- Row 3: Overall profiles (full width, shorter) ────────────────────── -->
+<div class="mini-chart-card" style="margin-bottom:1rem;">
+  <div class="mini-chart-header">
+    <div>
+      <h2 class="mini-chart-title">Area profile distribution</h2>
+      <div class="mini-chart-sub">Breakdown of the 15 areas across LiveSafe's 8 overall profiles</div>
+    </div>
+    <span class="mini-source-tag">LiveSafe</span>
+  </div>
+  <div class="mini-chart-body" style="min-height:180px;max-height:240px;">
+    <canvas id="chartProfiles"></canvas>
+  </div>
+  <div class="mini-note">
+    <strong>What this shows:</strong> <strong>Volatile Risk Areas</strong> have high crime with unpredictable month-to-month swings. <strong>Emerging Risk Areas</strong> have worsening trends. <strong>Stable Low-Risk Areas</strong> have consistently low, improving crime.
+  </div>
+</div>
+
+<div class="action-row">
+  <a href="/analysis" class="btn btn-outline">View ML Analysis →</a>
+  <a href="/rankings" class="btn btn-outline">View Area Rankings →</a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const areas = {{ areas_json | safe }};
+const sorted = [...areas].sort((a,b) => b.avg_monthly_crimes - a.avg_monthly_crimes);
+const names  = sorted.map(a => a.la_name);
+
+const CORAL    = '#f06060';
+const GOLD     = '#f0b429';
+const MIST     = '#8fa8c0';
+const SAGE     = '#4caf7d';
+const ACCENT   = '#3ecfcf';
+const ORANGE   = '#f07840';
+const NAVY_MID = '#1a2e42';
+const GRID_C   = 'rgba(255,255,255,0.06)';
+const TICK_C   = '#8fa8c0';
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = TICK_C;
+Chart.defaults.font.size = 10;
+
+// Compact scales for smaller charts
+const compactScales = {
+  x: {
+    grid: {color: GRID_C, display: false},
+    ticks: {color: TICK_C, font: {size: 9}, maxRotation: 60, minRotation: 45, autoSkip: false}
+  },
+  y: {
+    grid: {color: GRID_C},
+    ticks: {color: TICK_C, font: {size: 9}}
+  },
+};
+
+// Short area-name mapping for compact labels
+function shortName(n) {
+  return n.replace(', City of','').replace(' upon Tyne','').replace(', County of','');
+}
+
+// ── Chart 1: Crime volume ──
+new Chart(document.getElementById('chartCrimes'), {
+  type: 'bar',
+  data: {
+    labels: names.map(shortName),
+    datasets: [{
+      label: 'Avg monthly crimes',
+      data: sorted.map(a => Math.round(a.avg_monthly_crimes)),
+      backgroundColor: sorted.map(a => {
+        const l = a.crime_intensity_label;
+        if (l === 'Severe Crime Concentration') return CORAL;
+        if (l === 'Elevated Crime Level')       return GOLD;
+        if (l === 'Moderate Crime Level')       return ACCENT;
+        return SAGE;
+      }),
+      borderRadius: 3, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {legend: {display: false}},
+    scales: compactScales
+  }
+});
+
+// ── Chart 2: Crime mix (stacked) ──
+new Chart(document.getElementById('chartShares'), {
+  type: 'bar',
+  data: {
+    labels: names.map(shortName),
+    datasets: [
+      { label:'Violent',  data: sorted.map(a => +(a.avg_violent_share*100).toFixed(1)),  backgroundColor: CORAL+'cc', stack:'s' },
+      { label:'Property', data: sorted.map(a => +(a.avg_property_share*100).toFixed(1)), backgroundColor: GOLD+'cc',  stack:'s' },
+      { label:'Other',    data: sorted.map(a => +Math.max(0,100-a.avg_violent_share*100-a.avg_property_share*100).toFixed(1)), backgroundColor: MIST+'55', stack:'s', borderRadius:3 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {legend: {labels:{color:TICK_C,font:{size:10},boxWidth:10,padding:8}, position:'top', align:'end'}},
+    scales: {
+      x: {...compactScales.x, stacked: true},
+      y: {...compactScales.y, stacked: true, max: 100, ticks: {...compactScales.y.ticks, callback: v => v+'%'}}
+    }
+  }
+});
+
+// ── Chart 3: Trend slopes ──
+const trendSorted = [...areas].sort((a,b) => b.crime_trend_slope - a.crime_trend_slope);
+new Chart(document.getElementById('chartTrends'), {
+  type: 'bar',
+  data: {
+    labels: trendSorted.map(a => shortName(a.la_name)),
+    datasets: [{
+      label: 'Trend slope',
+      data: trendSorted.map(a => +a.crime_trend_slope.toFixed(2)),
+      backgroundColor: trendSorted.map(a => a.crime_trend_slope > 0.5 ? CORAL+'cc' : a.crime_trend_slope < -0.5 ? SAGE+'cc' : MIST+'88'),
+      borderRadius: 3, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {legend: {display: false}},
+    scales: {
+      x: compactScales.x,
+      y: {...compactScales.y, ticks: {...compactScales.y.ticks, callback: v => (v>0?'+':'')+v}}
+    }
+  }
+});
+
+// ── Chart 4: Profile doughnut ──
+const profileCounts = {};
+areas.forEach(a => { profileCounts[a.overall_profile] = (profileCounts[a.overall_profile]||0) + 1; });
+const profileColors = Object.keys(profileCounts).map(p => {
+  if (p.includes('Stable'))     return SAGE;
+  if (p.includes('Weather'))    return ACCENT;
+  if (p.includes('Crime-Sens')) return GOLD;
+  if (p.includes('Persistent')) return CORAL;
+  if (p.includes('Emerging') || p.includes('Volatile')) return ORANGE;
+  return MIST;
+});
+new Chart(document.getElementById('chartProfiles'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(profileCounts),
+    datasets: [{ data: Object.values(profileCounts), backgroundColor: profileColors,
+                 borderColor: NAVY_MID, borderWidth: 2 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {legend: {position: 'right', labels: {color: TICK_C, font: {size: 11}, padding: 10, boxWidth: 12}}}
+  }
+});
+
+// ── Chart 5: Rainfall ──
+const rainSorted = [...areas].sort((a,b) => b.avg_monthly_prcp - a.avg_monthly_prcp);
+new Chart(document.getElementById('chartRain'), {
+  type: 'bar',
+  data: {
+    labels: rainSorted.map(a => shortName(a.la_name)),
+    datasets: [{
+      label: 'Avg monthly rainfall (mm)',
+      data: rainSorted.map(a => +a.avg_monthly_prcp.toFixed(1)),
+      backgroundColor: rainSorted.map(a => {
+        const l = a.weather_exposure_label;
+        if (l === 'High Weather Stress') return CORAL;
+        if (l === 'Rain-Exposed')        return ACCENT;
+        if (l === 'Cold-Exposed')        return '#3e9fcf';
+        return MIST;
+      }),
+      borderRadius: 3, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {legend: {display: false}},
+    scales: compactScales
+  }
+});
+</script>
+{% endblock %}

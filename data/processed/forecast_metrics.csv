@@ -1,0 +1,16 @@
+area,slope,intercept,trend,mae,rmse,train_months,test_months
+"Bristol, City of",127.297,5235.36,Increasing,1463.98,1477.94,10,2
+Cardiff,5.9273,3759.33,Increasing,449.06,450.31,10,2
+Cornwall,51.4364,2890.44,Increasing,715.52,732.91,10,2
+County Durham,62.6545,4822.45,Increasing,720.33,743.29,10,2
+Coventry,15.9212,3396.25,Increasing,486.43,510.82,10,2
+Exeter,20.1394,1202.07,Increasing,244.04,245.36,10,2
+"Herefordshire, County of",0.4303,1034.36,Flat,112.38,119.19,10,2
+Leeds,117.7515,8893.82,Increasing,1294.21,1335.1,10,2
+Leicester,49.4182,3968.42,Increasing,396.31,496.27,10,2
+Newcastle upon Tyne,31.7455,3778.35,Increasing,420.67,456.73,10,2
+North Yorkshire,51.7697,3386.44,Increasing,713.02,715.36,10,2
+Norwich,14.3455,1480.15,Increasing,154.77,166.79,10,2
+Sheffield,35.3515,5508.42,Increasing,482.61,607.32,10,2
+Swansea,-7.6667,1966.0,Decreasing,126.5,178.66,10,2
+Wiltshire,45.3939,2430.73,Increasing,435.86,441.01,10,2

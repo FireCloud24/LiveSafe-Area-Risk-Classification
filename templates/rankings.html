@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+{% block title %}Area Rankings{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Filter bar ──────────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+  margin-bottom: 1.25rem; align-items: center;
+}
+.filter-label {
+  font-size: 0.72rem; color: var(--mist); margin-right: 0.25rem;
+  text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+}
+.filter-btn {
+  font-size: 0.74rem; padding: 0.3rem 0.75rem; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent; color: var(--mist); cursor: pointer;
+  transition: all 0.15s; font-family: var(--font-sans);
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--accent, #3ecfcf);
+  border-color: var(--accent, #3ecfcf);
+  color: #0d1b2a; font-weight: 600;
+}
+.filter-sep { color: rgba(255,255,255,0.15); margin: 0 0.2rem; font-size: 0.85rem; }
+
+/* ── Summary cards ───────────────────────────────────────────────────── */
+.summary-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 700px) { .summary-grid { grid-template-columns: repeat(2,1fr); } }
+.summary-card {
+  background: var(--card-bg, #162032);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px; padding: 0.85rem 1rem;
+}
+.summary-card-num {
+  font-family: var(--font-mono); font-size: 1.35rem;
+  font-weight: 700; color: var(--cloud); display: block;
+}
+.summary-card-lbl {
+  font-size: 0.68rem; color: var(--mist);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 0.1rem;
+}
+
+/* ── Table — no horizontal scroll ────────────────────────────────────── */
+.rankings-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.85rem;
+  table-layout: fixed;
+}
+.rankings-table thead th {
+  padding: 0.55rem 0.6rem;
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--mist);
+  text-align: left; border-bottom: 1px solid rgba(255,255,255,0.07);
+  white-space: nowrap; cursor: pointer; user-select: none;
+  transition: color 0.15s;
+}
+.rankings-table thead th:hover { color: var(--cloud); }
+.rankings-table thead th.sorted { color: var(--accent); }
+.sort-arrow { margin-left: 3px; opacity: 0.4; font-size: 0.7rem; }
+
+.rankings-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.12s; cursor: pointer;
+}
+.rankings-table tbody tr:hover { background: rgba(62,207,207,0.04); }
+.rankings-table tbody td {
+  padding: 0.65rem 0.6rem;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Column widths — sum = 100% */
+.col-rank     { width: 5%;  }
+.col-area     { width: 22%; }
+.col-crimes   { width: 20%; }
+.col-intensity{ width: 14%; }
+.col-trend    { width: 12%; }
+.col-weather  { width: 12%; }
+.col-profile  { width: 15%; }
+
+/* Rank cell */
+.rank-num {
+  font-family: var(--font-mono); font-size: 0.88rem;
+  color: var(--mist); font-weight: 500;
+}
+
+/* Area name */
+.area-name {
+  font-weight: 600; color: var(--cloud);
+  font-size: 0.88rem;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.area-code {
+  font-family: var(--font-mono); font-size: 0.65rem;
+  color: var(--slate); margin-top: 1px;
+}
+
+/* Crime bar */
+.crime-cell {
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.crime-num {
+  font-family: var(--font-mono); font-size: 0.82rem;
+  color: var(--cloud); min-width: 40px;
+}
+.crime-bar-track {
+  flex: 1; height: 5px; background: rgba(255,255,255,0.06);
+  border-radius: 3px; overflow: hidden;
+  min-width: 30px; max-width: 100px;
+}
+.crime-bar-fill { height: 100%; border-radius: 3px; }
+.bar-danger  { background: #f06060; }
+.bar-warning { background: #f0b429; }
+.bar-info    { background: #3ecfcf; }
+.bar-success { background: #4caf7d; }
+
+/* Badges compact */
+.rankings-table .badge {
+  font-size: 0.68rem; padding: 0.15rem 0.45rem;
+  max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis;
+  display: inline-block;
+}
+
+/* Trend arrow */
+.trend-cell {
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.trend-arrow {
+  font-size: 0.85rem; flex-shrink: 0;
+}
+.ta-up   { color: #f06060; }
+.ta-down { color: #4caf7d; }
+.ta-flat { color: #8fa8c0; }
+.ta-wave { color: #f0b429; }
+
+/* Hidden rows */
+.area-row.hidden { display: none; }
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .rankings-table { font-size: 0.8rem; }
+  .col-weather { display: none; }
+  .rankings-table .col-weather-cell { display: none; }
+  .col-area { width: 26%; }
+  .col-profile { width: 18%; }
+}
+@media (max-width: 640px) {
+  .col-pattern, .col-pattern-cell,
+  .col-trend-text { display: none; }
+  .col-crimes { width: 24%; }
+  .col-area   { width: 30%; }
+  .col-profile{ width: 22%; }
+}
+
+.help-note {
+  font-size: 0.72rem; color: var(--slate);
+  margin-top: 0.75rem; padding: 0 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Area Rankings</h1>
+<p class="page-subtitle">All 15 local authority areas ranked by crime intensity. Click any row to view the full profile.</p>
+
+<!-- Summary cards -->
+<div class="summary-grid">
+  <div class="summary-card">
+    <span class="summary-card-num">{{ areas | length }}</span>
+    <div class="summary-card-lbl">Areas</div>
+  </div>
+  <div class="summary-card">
+    <span class="summary-card-num">{{ areas | selectattr('overall_profile', 'in', ['Volatile Risk Area','Emerging Risk Area','Persistent Multi-Factor Risk Area','Crime-Sensitive Area']) | list | length }}</span>
+    <div class="summary-card-lbl">High-risk</div>
+  </div>
+  <div class="summary-card">
+    <span class="summary-card-num">{{ areas | selectattr('crime_trend_label', 'equalto', 'Improving') | list | length }}</span>
+    <div class="summary-card-lbl">Improving</div>
+  </div>
+  <div class="summary-card">
+    <span class="summary-card-num">{{ areas | selectattr('crime_trend_label', 'in', ['Deteriorating']) | list | length }}</span>
+    <div class="summary-card-lbl">Deteriorating</div>
+  </div>
+</div>
+
+<!-- Filter bar -->
+<div class="filter-bar">
+  <span class="filter-label">Filter</span>
+  <button class="filter-btn active" onclick="filterRows('all', this)">All</button>
+  <span class="filter-sep">·</span>
+  <button class="filter-btn" onclick="filterRows('Severe Crime Concentration', this)">Severe</button>
+  <button class="filter-btn" onclick="filterRows('Elevated Crime Level', this)">Elevated</button>
+  <button class="filter-btn" onclick="filterRows('Moderate Crime Level', this)">Moderate</button>
+  <button class="filter-btn" onclick="filterRows('Very Low Recorded Crime', this)">Very Low</button>
+  <span class="filter-sep">·</span>
+  <button class="filter-btn" onclick="filterTrend('Improving', this)">▼ Improving</button>
+  <button class="filter-btn" onclick="filterTrend('Deteriorating', this)">▲ Deteriorating</button>
+  <button class="filter-btn" onclick="filterTrend('Fluctuating', this)">~ Fluctuating</button>
+</div>
+
+<!-- Rankings table -->
+<div class="card" style="padding:0.5rem 0.75rem;">
+  <table class="rankings-table" id="rankingsTable">
+    <thead>
+      <tr>
+        <th class="col-rank" onclick="sortTable('rank')">#<span class="sort-arrow">↕</span></th>
+        <th class="col-area" onclick="sortTable('name')">Area<span class="sort-arrow">↕</span></th>
+        <th class="col-crimes" onclick="sortTable('crimes')">Avg Monthly Crimes<span class="sort-arrow">↕</span></th>
+        <th class="col-intensity" onclick="sortTable('intensity')">Intensity<span class="sort-arrow">↕</span></th>
+        <th class="col-trend" onclick="sortTable('trend')">Trend<span class="sort-arrow">↕</span></th>
+        <th class="col-weather" onclick="sortTable('weather')">Weather</th>
+        <th class="col-profile">Profile</th>
+      </tr>
+    </thead>
+    <tbody id="rankingsBody">
+      {% for a in areas %}
+      {% set rank = loop.index %}
+      <tr class="area-row"
+          data-rank="{{ rank }}"
+          data-name="{{ a.la_name }}"
+          data-crimes="{{ a.avg_monthly_crimes }}"
+          data-intensity="{{ a.crime_intensity_label }}"
+          data-trend="{{ a.crime_trend_label }}"
+          data-profile="{{ a.overall_profile }}"
+          onclick="window.location='/area?code={{ a.la_code }}'">
+        <td class="col-rank"><span class="rank-num">{{ rank }}</span></td>
+        <td class="col-area">
+          <div class="area-name" title="{{ a.la_name }}">{{ a.la_name }}</div>
+          <div class="area-code">{{ a.la_code }}</div>
+        </td>
+        <td class="col-crimes">
+          <div class="crime-cell">
+            <span class="crime-num">{{ a.avg_monthly_crimes | round(0) | int }}</span>
+            <span class="crime-bar-track">
+              <span class="crime-bar-fill bar-{{ intensity_color(a.crime_intensity_label) }}"
+                    style="width:{{ [(a.avg_monthly_crimes / max_crimes * 100), 100] | min | round(0) | int }}%"></span>
+            </span>
+          </div>
+        </td>
+        <td class="col-intensity">
+          <span class="badge badge-{{ intensity_color(a.crime_intensity_label) }}"
+                title="{{ a.crime_intensity_label }}">
+            {{ a.crime_intensity_label | replace(' Crime Concentration','') | replace(' Crime Level','') | replace(' Recorded Crime','') }}
+          </span>
+        </td>
+        <td class="col-trend">
+          <div class="trend-cell">
+            <span class="trend-arrow
+              {% if a.crime_trend_label == 'Deteriorating' %}ta-up
+              {% elif a.crime_trend_label == 'Improving' %}ta-down
+              {% elif a.crime_trend_label == 'Fluctuating' %}ta-wave
+              {% else %}ta-flat{% endif %}">
+              {% if a.crime_trend_label == 'Deteriorating' %}▲
+              {% elif a.crime_trend_label == 'Improving' %}▼
+              {% elif a.crime_trend_label == 'Fluctuating' %}~
+              {% else %}—{% endif %}
+            </span>
+            <span class="badge badge-{{ trend_color(a.crime_trend_label) }}"
+                  title="{{ a.crime_trend_label }}">
+              {{ a.crime_trend_label }}
+            </span>
+          </div>
+        </td>
+        <td class="col-weather col-weather-cell">
+          <span class="badge badge-{{ weather_color(a.weather_exposure_label) }}"
+                title="{{ a.weather_exposure_label }}">
+            {{ a.weather_exposure_label | replace(' Conditions','') | replace('-Exposed','') | replace(' Volatile','') | replace(' Weather Stress','') }}
+          </span>
+        </td>
+        <td class="col-profile">
+          <span class="badge badge-{{ profile_badge_color(a.overall_profile) }}"
+                title="{{ a.overall_profile }}">
+            {{ a.overall_profile | replace(' Area','') | replace(' Risk','') }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p class="help-note">
+  Areas ranked by average monthly crime count. Click any column header to re-sort. Click any row to view the full area profile. Hover labels for full names.
+</p>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let sortCol = 'rank', sortAsc = true;
+let activeFilter = 'all', activeTrend = null;
+
+function filterRows(intensity, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (['All','Severe','Elevated','Moderate','Very Low'].some(l => b.textContent.trim().startsWith(l) && !b.textContent.includes('▼') && !b.textContent.includes('▲') && !b.textContent.includes('~'))) {
+      b.classList.remove('active');
+    }
+  });
+  btn.classList.add('active');
+  activeFilter = intensity;
+  applyFilters();
+}
+
+function filterTrend(trend, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (['Improving','Deteriorating','Fluctuating'].some(l => b.textContent.includes(l))) b.classList.remove('active');
+  });
+  if (activeTrend === trend) {
+    activeTrend = null;
+  } else {
+    btn.classList.add('active');
+    activeTrend = trend;
+  }
+  applyFilters();
+}
+
+function applyFilters() {
+  document.querySelectorAll('.area-row').forEach(row => {
+    const intensity = row.dataset.intensity;
+    const trend     = row.dataset.trend;
+    let show = true;
+    if (activeFilter !== 'all' && intensity !== activeFilter) show = false;
+    if (activeTrend && trend !== activeTrend) show = false;
+    row.classList.toggle('hidden', !show);
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+
+  document.querySelectorAll('.rankings-table thead th').forEach(th => th.classList.remove('sorted'));
+  const thIdx = ['rank','name','crimes','intensity','trend','weather','profile'].indexOf(col);
+  document.querySelectorAll('.rankings-table thead th')[thIdx]?.classList.add('sorted');
+
+  const tbody = document.getElementById('rankingsBody');
+  const rows  = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a, b) => {
+    let va, vb;
+    if (col === 'rank' || col === 'crimes') {
+      va = parseFloat(a.dataset[col === 'rank' ? 'rank' : 'crimes']) || 0;
+      vb = parseFloat(b.dataset[col === 'rank' ? 'rank' : 'crimes']) || 0;
+      return sortAsc ? va - vb : vb - va;
+    }
+    va = (a.dataset[col] || '').toLowerCase();
+    vb = (b.dataset[col] || '').toLowerCase();
+    return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+</script>
+{% endblock %}
