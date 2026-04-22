@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+{% block title %}Area Profile{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Two-column profile layout */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .profile-layout { grid-template-columns: 1fr; }
+  .profile-sidebar { order: -1; }
+}
+
+/* Sidebar */
+.profile-sidebar { position: sticky; top: 1rem; }
+
+.sidebar-ranking-card { padding: 1.25rem 0; }
+
+.sidebar-ranking-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.25rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sidebar-count {
+  font-size: 0.72rem; font-weight: 600;
+  color: var(--accent, #3ecfcf);
+  background: rgba(62,207,207,0.1);
+  border-radius: 20px; padding: 0.15rem 0.55rem;
+  font-family: var(--font-mono);
+}
+.ranking-scroll {
+  max-height: 500px; overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.ranking-scroll::-webkit-scrollbar { width: 3px; }
+.ranking-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+/* Tighter table for sidebar */
+.sidebar-ranking-card .neigh-table th,
+.sidebar-ranking-card .neigh-table td { padding: 0.42rem 0.55rem; font-size: 0.77rem; }
+.sidebar-ranking-card .neigh-table { width: 100%; }
+
+/* Highlight searched neighbourhood row */
+.neigh-row-highlight td { background: rgba(62,207,207,0.06); }
+.neigh-row-highlight td:first-child { border-left: 2px solid var(--accent, #3ecfcf); }
+
+.neigh-name-cell {
+  display: inline-block; max-width: 120px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  vertical-align: middle;
+}
+.sidebar-legend {
+  padding: 0.6rem 1.25rem 0;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.7rem; color: var(--slate, #6b8299);
+  margin-top: 0.4rem;
+}
+
+/* Anomaly flag */
+.anomaly-flag {
+  display: flex; gap: 0.65rem; align-items: flex-start;
+  background: rgba(240,180,11,0.07);
+  border: 1px solid rgba(240,180,11,0.28);
+  border-radius: 8px; padding: 0.7rem 0.9rem;
+  margin-top: 0.75rem;
+  font-size: 0.82rem; line-height: 1.5;
+}
+.anomaly-flag-icon { font-size: 1rem; color: #f0b42b; flex-shrink: 0; margin-top: 0.05rem; }
+.anomaly-flag strong { display: block; color: #f0b42b; margin-bottom: 0.1rem; }
+.anomaly-flag span { color: var(--mist, #8fa8c0); }
+
+.anomaly-dot-badge {
+  display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; background: #f0b42b;
+  margin-left: 3px; vertical-align: middle;
+}
+
+/* Forecast card */
+.forecast-stats-row {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+  margin: 0.75rem 0 1rem;
+}
+.forecast-stat-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.forecast-stat-val {
+  font-family: var(--font-mono); font-size: 1.1rem;
+  font-weight: 600; color: var(--cloud, #e8f0f7);
+}
+.forecast-stat-lbl {
+  font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--slate, #6b8299);
+}
+.projections-strip {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px; padding: 0.7rem 1rem; margin-top: 0.5rem;
+}
+.projections-lbl { font-size: 0.78rem; color: var(--mist, #8fa8c0); white-space: nowrap; }
+.proj-item { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; min-width: 52px; }
+.proj-month { font-size: 0.68rem; color: var(--slate, #6b8299); }
+.proj-val { font-family: var(--font-mono); font-size: 1rem; font-weight: 600; color: var(--accent, #3ecfcf); }
+.proj-ci { font-size: 0.68rem; color: var(--slate, #6b8299); }
+
+.clr-good { color: #4caf7d; }
+.clr-bad  { color: #f06060; }
+.clr-warn { color: #f0b429; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Area Profile</h1>
+<p class="page-subtitle">Search by postcode or select a local authority area.</p>
+
+<!-- Search -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="search-tabs">
+    <button class="search-tab active" id="tab-postcode" onclick="switchTab('postcode')">Search by postcode</button>
+    <button class="search-tab" id="tab-area" onclick="switchTab('area')">Browse by area</button>
+  </div>
+  <form method="GET" action="/area" id="form-postcode">
+    <div class="form-row" style="margin-bottom:0;">
+      <div class="form-group" style="flex:2;">
+        <label class="form-label" for="postcode">Postcode</label>
+        <input class="form-input" type="text" id="postcode" name="postcode"
+               placeholder="e.g. LS1 4AP, BS1 6NL, NE1 7RU"
+               value="{{ postcode_query or '' }}" autocomplete="off" spellcheck="false">
+      </div>
+      <button type="submit" class="btn btn-primary" style="align-self:flex-end;">Search</button>
+    </div>
+  </form>
+  <form method="GET" action="/area" id="form-area" style="display:none;">
+    <div class="form-row" style="margin-bottom:0;">
+      <div class="form-group">
+        <label class="form-label" for="code">Local Authority</label>
+        <select class="form-select" id="code" name="code">
+          <option value="">— Select an area —</option>
+          {% for a in areas %}
+            <option value="{{ a.la_code }}"
+              {% if result and result.la_code == a.la_code %}selected{% endif %}>
+              {{ a.la_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="align-self:flex-end;">View Profile</button>
+    </div>
+  </form>
+</div>
+
+{% if error %}<div class="alert alert-warning">{{ error | safe }}</div>{% endif %}
+
+{% if postcode_info and result %}
+<div class="postcode-banner">
+  <div class="postcode-pill">{{ postcode_info.postcode }}</div>
+  <div class="postcode-detail">
+    <span>{{ postcode_info.ward }}</span>
+    <span class="sep">·</span>
+    <span>{{ postcode_info.la_name }}</span>
+    {% if postcode_info.region %}<span class="sep">·</span><span>{{ postcode_info.region }}</span>{% endif %}
+  </div>
+  <div class="postcode-coords">{{ postcode_info.latitude }}°N, {{ postcode_info.longitude | abs }}°W</div>
+</div>
+{% endif %}
+
+{% if result %}
+
+<div class="profile-layout">
+
+  <!-- LEFT: main content -->
+  <div>
+
+    <!-- Neighbourhood spotlight -->
+    {% if neighbourhood %}
+    <div class="card neigh-spotlight" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+        <div>
+          <div class="neigh-label">Nearest neighbourhood</div>
+          <h2 class="neigh-name">{{ neighbourhood.neighbourhood_name }}</h2>
+          <div style="font-size:0.8rem;color:var(--slate);margin-top:0.2rem;">{{ result.la_name }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
+          <span class="badge badge-lg badge-{{ neigh_intensity_color(neighbourhood.neigh_intensity) }}">
+            {{ neighbourhood.neigh_intensity }}
+          </span>
+          <span class="badge badge-{{ neigh_trend_color(neighbourhood.neigh_trend) }}">
+            {{ neighbourhood.neigh_trend }}
+          </span>
+        </div>
+        {% if neighbourhood.rf_predicted_class is defined and neighbourhood.rf_predicted_class %}
+        <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.35rem;">
+          <span style="font-size:0.68rem;color:var(--slate);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em;">ML:</span>
+          <span class="badge badge-{{ neigh_intensity_color(neighbourhood.rf_predicted_class) }}" style="font-size:0.68rem;padding:0.1rem 0.4rem;opacity:0.85;">
+            RF: {{ neighbourhood.rf_predicted_class | replace(' Crime','') }}
+          </span>
+          {% if neighbourhood.gb_predicted_class is defined and neighbourhood.gb_predicted_class %}
+          <span class="badge badge-{{ neigh_intensity_color(neighbourhood.gb_predicted_class) }}" style="font-size:0.68rem;padding:0.1rem 0.4rem;opacity:0.85;">
+            GB: {{ neighbourhood.gb_predicted_class | replace(' Crime','') }}
+          </span>
+          {% endif %}
+          {% if neighbourhood.rf_predicted_class == neighbourhood.neigh_intensity %}
+          <span style="font-size:0.68rem;color:#4caf7d;" title="ML agrees with rule-based classification">✓ agrees</span>
+          {% else %}
+          <span style="font-size:0.68rem;color:#f0b429;" title="ML disagrees with rule-based classification">≠ differs</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Anomaly flag from Isolation Forest -->
+      {% if neighbourhood.is_anomaly %}
+      <div class="anomaly-flag">
+        <span class="anomaly-flag-icon">⚠</span>
+        <div>
+          <strong>Statistical outlier detected</strong>
+          <span>
+            This neighbourhood exhibits unusual crime patterns relative to others in
+            {{ result.la_name }}, flagged by Isolation Forest anomaly detection
+            (score: {{ "%.2f" | format(neighbourhood.anomaly_score) }}).
+          </span>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="neigh-stats" style="{% if neighbourhood.is_anomaly %}margin-top:1rem;{% endif %}">
+        <div class="neigh-stat">
+          <div class="neigh-stat-value">{{ neighbourhood.crime_rank }}</div>
+          <div class="neigh-stat-label">Rank in {{ result.la_name }}</div>
+          <div class="neigh-stat-sub">out of {{ neighbourhood.total_neighs }} neighbourhoods</div>
+        </div>
+        <div class="neigh-stat">
+          <div class="neigh-stat-value">{{ neighbourhood.avg_monthly_crimes | round(0) | int }}</div>
+          <div class="neigh-stat-label">Avg monthly crimes</div>
+          <div class="neigh-stat-sub">Jan–Dec 2024</div>
+        </div>
+        <div class="neigh-stat">
+          <div class="neigh-stat-value">{{ (neighbourhood.violent_share * 100) | round(1) }}<span style="font-size:1rem;font-weight:400;">%</span></div>
+          <div class="neigh-stat-label">Violent crime</div>
+          <div class="neigh-stat-sub">share of total</div>
+        </div>
+        <div class="neigh-stat">
+          <div class="neigh-stat-value" style="font-size:1rem;">{{ neighbourhood.top_crime_category | replace('-',' ') | title }}</div>
+          <div class="neigh-stat-label">Top crime type</div>
+          <div class="neigh-stat-sub">most recorded</div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.25rem;">
+        <div style="font-size:0.78rem;color:var(--mist);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">
+          Crime rank within {{ result.la_name }}
+        </div>
+        <div class="rank-bar-track">
+          <div class="rank-bar-fill"
+               style="width:{{ ((neighbourhood.total_neighs - neighbourhood.crime_rank + 1) / neighbourhood.total_neighs * 100) | round(1) }}%;
+                      background:{% if neighbourhood.neigh_intensity == 'High Crime' %}var(--danger){% elif neighbourhood.neigh_intensity == 'Moderate Crime' %}var(--warning){% else %}var(--success){% endif %}">
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--slate);margin-top:0.3rem;">
+          <span>Highest crime (#1)</span>
+          <span>Lowest crime (#{{ neighbourhood.total_neighs }})</span>
+        </div>
+      </div>
+    </div>
+
+    {% elif neigh_loaded and postcode_query %}
+    <div class="alert alert-info" style="margin-bottom:1rem;">
+      Neighbourhood data loaded but could not pinpoint the exact neighbourhood for this postcode.
+    </div>
+    {% elif not neigh_loaded %}
+    <div class="alert alert-info" style="margin-bottom:1rem;">
+      <strong>Neighbourhood breakdown not available yet.</strong>
+      Run <code>python download_neighbourhoods.py</code> to enable postcode-level neighbourhood analysis.
+    </div>
+    {% endif %}
+
+    <!-- LA-level profile -->
+    <div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div>
+          <div style="font-size:0.78rem;color:var(--mist);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem;">Local authority area</div>
+          <h2 style="font-size:1.4rem;font-weight:600;letter-spacing:-0.02em;">{{ result.la_name }}</h2>
+          <code style="font-size:0.75rem;color:var(--slate);">{{ result.la_code }}</code>
+        </div>
+        <span class="badge badge-lg badge-{{ profile_badge_color(result.overall_profile) }}">{{ result.overall_profile }}</span>
+      </div>
+      <div class="interpretation">{{ result.interpretation | safe }}</div>
+    </div>
+
+    <!-- Risk dimensions -->
+    <div class="card" style="margin-top:1rem;">
+      <div class="section-title">Risk dimensions</div>
+      <div class="dimension-list">
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Intensity</span>
+          <span class="badge badge-{{ intensity_color(result.crime_intensity_label) }}">{{ result.crime_intensity_label }}</span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Pattern</span>
+          <span class="badge badge-secondary">{{ result.crime_pattern_label }}</span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Crime Trend</span>
+          <span class="badge badge-{{ trend_color(result.crime_trend_label) }}">{{ result.crime_trend_label }}</span>
+        </div>
+        <div class="dimension-row">
+          <span class="dimension-name">Weather Exposure</span>
+          <span class="badge badge-{{ weather_color(result.weather_exposure_label) }}">{{ result.weather_exposure_label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="card" style="margin-top:1rem;">
+      <div class="section-title">Supporting metrics — 2024</div>
+      <div class="metric-grid">
+        <div class="metric-card">
+          <div class="metric-label">Avg monthly crimes</div>
+          <div class="metric-value">{{ result.avg_monthly_crimes | round(0) | int }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total crimes (12m)</div>
+          <div class="metric-value">{{ result.total_crimes_12m | int }}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Violent crime share</div>
+          <div class="metric-value">{{ (result.avg_violent_share * 100) | round(1) }}<span class="metric-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Property crime share</div>
+          <div class="metric-value">{{ (result.avg_property_share * 100) | round(1) }}<span class="metric-unit">%</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Crime trend slope</div>
+          <div class="metric-value">{{ result.crime_trend_slope | round(2) }}<span class="metric-unit">/mo</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg monthly rainfall</div>
+          <div class="metric-value">{{ result.avg_monthly_prcp | round(1) }}<span class="metric-unit">mm</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Avg temperature</div>
+          <div class="metric-value">{{ result.avg_tavg | round(1) }}<span class="metric-unit">°C</span></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cold months (≤5°C)</div>
+          <div class="metric-value">{{ result.cold_month_count | int }}<span class="metric-unit">/12</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crime forecast -->
+    {% if area_forecast %}
+    <div class="card" style="margin-top:1rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+        <div class="section-title" style="margin-bottom:0.2rem;">Crime trend forecast</div>
+        <span class="badge badge-secondary" style="font-size:0.72rem;">Linear Regression · ML</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--mist);margin-bottom:0.75rem;">
+        Trained Jan–Oct 2024 &middot; Evaluated Nov–Dec 2024 holdout
+      </div>
+
+      <div class="forecast-stats-row">
+        <div class="forecast-stat-item">
+          <span class="forecast-stat-val">{{ area_forecast.mae | round(1) if area_forecast.mae else '—' }}</span>
+          <span class="forecast-stat-lbl">MAE (test)</span>
+        </div>
+        <div class="forecast-stat-item">
+          <span class="forecast-stat-val">{{ area_forecast.rmse | round(1) if area_forecast.rmse else '—' }}</span>
+          <span class="forecast-stat-lbl">RMSE</span>
+        </div>
+        <div class="forecast-stat-item">
+          <span class="forecast-stat-val {% if area_forecast.slope and area_forecast.slope > 0.5 %}clr-bad{% elif area_forecast.slope and area_forecast.slope < -0.5 %}clr-good{% endif %}">
+            {% if area_forecast.slope %}{% if area_forecast.slope > 0 %}+{% endif %}{{ area_forecast.slope | round(2) }}{% else %}—{% endif %}
+          </span>
+          <span class="forecast-stat-lbl">Slope (crimes/mo)</span>
+        </div>
+        <div class="forecast-stat-item">
+          <span class="forecast-stat-val {% if area_forecast.trend == 'Increasing' %}clr-bad{% elif area_forecast.trend == 'Decreasing' %}clr-good{% else %}clr-warn{% endif %}">
+            {{ area_forecast.trend or '—' }}
+          </span>
+          <span class="forecast-stat-lbl">Direction</span>
+        </div>
+      </div>
+
+      {% if area_projections %}
+      <div class="projections-strip">
+        <span class="projections-lbl">3-month projection:</span>
+        {% for proj in area_projections %}
+        <div class="proj-item">
+          <span class="proj-month">+{{ proj.months_ahead }}mo</span>
+          <span class="proj-val">{{ proj.predicted_crimes | round(0) | int }}</span>
+          <span class="proj-ci">{{ proj.ci_lower | round(0) | int }}–{{ proj.ci_upper | round(0) | int }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div style="font-size:0.72rem;color:var(--slate);margin-top:0.5rem;">
+        95% confidence intervals shown. Wide ranges reflect the limitation of 12-month training data.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top:1.25rem;">
+      <a href="/compare?a={{ result.la_code }}" class="btn btn-outline">Compare {{ result.la_name }} with another area →</a>
+    </div>
+
+  </div><!-- /left column -->
+
+  <!-- RIGHT: neighbourhood ranking sidebar -->
+  <aside class="profile-sidebar">
+    {% if neighbourhood_ranking %}
+    <div class="card sidebar-ranking-card">
+      <div class="sidebar-ranking-header">
+        <div class="section-title" style="margin-bottom:0;">Neighbourhood rankings</div>
+        <span class="sidebar-count">{{ neighbourhood_ranking | length }}</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--mist);padding:0.45rem 1.25rem 0.6rem;">
+        All neighbourhoods in {{ result.la_name }}
+      </div>
+
+      <div class="ranking-scroll">
+        <table class="neigh-table" style="margin:0;">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Neighbourhood</th>
+              <th>Avg/mo</th>
+              <th>Level</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in neighbourhood_ranking %}
+            <tr class="{% if neighbourhood and n.neighbourhood_id == neighbourhood.neighbourhood_id %}neigh-row-highlight{% endif %}">
+              <td style="font-family:var(--font-mono);color:var(--mist);font-size:0.72rem;">{{ n.crime_rank }}</td>
+              <td>
+                <span class="neigh-name-cell" title="{{ n.neighbourhood_name }}">{{ n.neighbourhood_name }}</span>
+                {% if neighbourhood and n.neighbourhood_id == neighbourhood.neighbourhood_id %}
+                  <span class="here-pill">you</span>
+                {% endif %}
+                {% if n.is_anomaly %}<span class="anomaly-dot-badge" title="Isolation Forest outlier"></span>{% endif %}
+              </td>
+              <td style="font-family:var(--font-mono);">{{ n.avg_monthly_crimes | round(1) }}</td>
+              <td>
+                <span class="badge badge-{{ neigh_intensity_color(n.neigh_intensity) }}" style="font-size:0.66rem;padding:0.1rem 0.38rem;">
+                  {{ n.neigh_intensity | replace(' Crime','') }}
+                </span>
+                {% if n.rf_predicted_class is defined and n.rf_predicted_class and n.rf_predicted_class != n.neigh_intensity %}
+                <span style="font-size:0.6rem;color:#f0b429;" title="RF predicts: {{ n.rf_predicted_class }}">≠</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge badge-{{ neigh_trend_color(n.neigh_trend) }}" style="font-size:0.66rem;padding:0.1rem 0.38rem;">
+                  {{ n.neigh_trend }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sidebar-legend">
+        <span style="display:inline-flex;align-items:center;gap:4px;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f0b42b;"></span>
+          Isolation Forest outlier
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:4px;margin-left:0.8rem;">
+          <span style="color:#f0b429;font-size:0.75rem;">≠</span>
+          RF disagrees with rule-based
+        </span>
+      </div>
+    </div>
+
+    {% elif not neigh_loaded %}
+    <div class="card" style="text-align:center;padding:2rem;color:var(--slate);font-size:0.85rem;line-height:1.7;">
+      Neighbourhood rankings available after running<br>
+      <code style="font-size:0.78rem;">download_neighbourhoods.py</code>
+    </div>
+    {% endif %}
+  </aside>
+
+</div><!-- /profile-layout -->
+
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const params = new URLSearchParams(window.location.search);
+if (params.has('code') && !params.has('postcode')) switchTab('area');
+
+function switchTab(tab) {
+  document.getElementById('form-postcode').style.display = tab==='postcode'?'block':'none';
+  document.getElementById('form-area').style.display     = tab==='area'?'block':'none';
+  document.getElementById('tab-postcode').classList.toggle('active', tab==='postcode');
+  document.getElementById('tab-area').classList.toggle('active',     tab==='area');
+}
+
+document.getElementById('postcode').addEventListener('input', function() {
+  const pos = this.selectionStart;
+  this.value = this.value.toUpperCase();
+  this.setSelectionRange(pos, pos);
+});
+</script>
+{% endblock %}

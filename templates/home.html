@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Hero */
+.home-hero {
+  padding: 5rem 0 3.5rem;
+  text-align: center;
+  position: relative;
+}
+.hero-eyebrow {
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--accent, #3ecfcf); margin-bottom: 1.25rem;
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: ''; display: inline-block; width: 32px; height: 1px; background: var(--accent, #3ecfcf); opacity: 0.4;
+}
+.home-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1.15; margin-bottom: 1.25rem;
+  color: var(--cloud, #e8f0f7);
+}
+.hero-accent { color: var(--accent, #3ecfcf); }
+.home-hero p {
+  font-size: 1.05rem; color: var(--mist, #8fa8c0);
+  max-width: 580px; margin: 0 auto 2rem; line-height: 1.75;
+}
+
+/* Hero search */
+.hero-search {
+  display: flex; gap: 0.6rem; max-width: 480px;
+  margin: 0 auto 1rem;
+}
+.hero-search-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px; padding: 0.75rem 1.1rem;
+  color: var(--cloud, #e8f0f7); font-family: var(--font-sans);
+  font-size: 1rem; transition: border-color 0.2s;
+}
+.hero-search-input:focus {
+  outline: none; border-color: var(--accent, #3ecfcf);
+  background: rgba(62,207,207,0.06);
+}
+.hero-search-input::placeholder { color: var(--slate, #6b8299); }
+.btn-hero {
+  background: var(--accent, #3ecfcf); color: #0d1b2a;
+  font-weight: 700; padding: 0.75rem 1.4rem;
+  border-radius: 10px; border: none; cursor: pointer;
+  font-size: 0.9rem; transition: opacity 0.2s; white-space: nowrap;
+}
+.btn-hero:hover { opacity: 0.88; }
+.hero-hint {
+  font-size: 0.78rem; color: var(--slate, #6b8299);
+  margin-top: 0.4rem;
+}
+
+/* Stats bar */
+.stats-bar {
+  display: flex; justify-content: center; gap: 0;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin: 2.5rem 0;
+  flex-wrap: wrap;
+}
+.stat-block {
+  flex: 1; min-width: 140px; max-width: 220px;
+  padding: 1.5rem 1rem; text-align: center;
+  border-right: 1px solid rgba(255,255,255,0.07);
+}
+.stat-block:last-child { border-right: none; }
+.stat-block-num {
+  font-family: var(--font-mono); font-size: 1.8rem;
+  font-weight: 700; color: var(--accent, #3ecfcf); display: block;
+}
+.stat-block-lbl {
+  font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--mist, #8fa8c0);
+  margin-top: 0.3rem;
+}
+
+/* Who is this for */
+.audience-section { padding: 0.5rem 0 3rem; }
+.audience-section-title {
+  text-align: center; font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--mist, #8fa8c0); margin-bottom: 1.5rem;
+}
+.audience-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
+}
+@media (max-width: 720px) { .audience-grid { grid-template-columns: 1fr; } }
+
+.audience-card {
+  background: var(--card-bg, #162032);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px; padding: 1.75rem 1.5rem;
+  text-decoration: none; display: block;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative; overflow: hidden;
+}
+.audience-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; background: var(--card-accent, var(--accent));
+  border-radius: 14px 14px 0 0;
+}
+.audience-card:hover {
+  border-color: rgba(62,207,207,0.25);
+  transform: translateY(-2px);
+}
+.audience-card.card-resident { --card-accent: #4caf7d; }
+.audience-card.card-investor { --card-accent: #3ecfcf; }
+.audience-card.card-council  { --card-accent: #818cf8; }
+
+.audience-icon { font-size: 2rem; margin-bottom: 1rem; display: block; }
+.audience-who {
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 0.4rem;
+}
+.card-resident .audience-who { color: #4caf7d; }
+.card-investor .audience-who { color: #3ecfcf; }
+.card-council  .audience-who { color: #818cf8; }
+
+.audience-title {
+  font-size: 1.05rem; font-weight: 600; color: var(--cloud, #e8f0f7);
+  margin-bottom: 0.6rem; line-height: 1.3;
+}
+.audience-desc {
+  font-size: 0.84rem; color: var(--mist, #8fa8c0); line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+.audience-links { display: flex; flex-direction: column; gap: 0.4rem; }
+.audience-link {
+  font-size: 0.8rem; color: var(--mist, #8fa8c0);
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.audience-link::before { content: '→'; font-size: 0.75rem; }
+
+/* Quick nav tiles */
+.quicknav-section { padding: 0 0 3rem; }
+.quicknav-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.85rem;
+}
+@media (max-width: 900px) { .quicknav-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 500px) { .quicknav-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.quicknav-tile {
+  background: var(--card-bg, #162032);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px; padding: 1rem 0.75rem;
+  text-decoration: none; text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex; flex-direction: column; gap: 0.5rem; align-items: center;
+}
+.quicknav-tile:hover {
+  border-color: rgba(62,207,207,0.3);
+  background: rgba(62,207,207,0.04);
+}
+.quicknav-icon { font-size: 1.4rem; }
+.quicknav-label {
+  font-size: 0.75rem; font-weight: 600; color: var(--cloud, #e8f0f7);
+  letter-spacing: 0.01em;
+}
+.quicknav-desc { font-size: 0.68rem; color: var(--slate, #6b8299); line-height: 1.4; }
+
+/* Highlights */
+.highlights-section { padding: 0 0 4rem; }
+.highlights-header {
+  display: flex; align-items: center; gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.highlights-title { font-size: 1rem; font-weight: 600; color: var(--cloud, #e8f0f7); margin: 0; }
+.highlights-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+}
+@media (max-width: 720px) { .highlights-grid { grid-template-columns: 1fr; } }
+
+.highlight-card {
+  background: var(--card-bg, #162032);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px; padding: 1.25rem;
+}
+.highlight-label {
+  font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 0.6rem;
+}
+.hl-green { color: #4caf7d; }
+.hl-orange { color: #f0b429; }
+.hl-coral { color: #f06060; }
+.hl-teal { color: #3ecfcf; }
+
+.highlight-stat {
+  font-family: var(--font-mono); font-size: 1.6rem;
+  font-weight: 700; color: var(--cloud, #e8f0f7);
+  margin-bottom: 0.35rem; display: block;
+}
+.highlight-desc {
+  font-size: 0.82rem; color: var(--mist, #8fa8c0); line-height: 1.6;
+}
+.highlight-link {
+  display: inline-block; margin-top: 0.75rem;
+  font-size: 0.78rem; color: var(--accent, #3ecfcf); text-decoration: none;
+}
+.highlight-link:hover { text-decoration: underline; }
+
+/* Alert */
+.home-alert {
+  background: rgba(240,180,11,0.08); border: 1px solid rgba(240,180,11,0.2);
+  border-radius: 10px; padding: 0.85rem 1.1rem;
+  font-size: 0.85rem; color: var(--mist, #8fa8c0);
+  margin-bottom: 2rem;
+}
+.home-alert strong { color: #f0b429; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="home-hero">
+  <div class="hero-eyebrow">UK Area Risk Classification · 2024 Data</div>
+  <h1>Know your area.<br><span class="hero-accent">Make better decisions.</span></h1>
+  <p>
+    LiveSafe analyses crime patterns, weather exposure, and long-term trends
+    across 15 UK local authority areas — giving residents, investors, and councils
+    a clear, transparent picture of area risk.
+  </p>
+
+  <form class="hero-search" action="/area" method="get">
+    <input class="hero-search-input" type="text" name="postcode"
+           placeholder="Enter a postcode — e.g. BS1 4DJ"
+           autocomplete="off" spellcheck="false" id="heroPostcode">
+    <button type="submit" class="btn-hero">Search</button>
+  </form>
+  <div class="hero-hint">Covers 15 local authority areas across England and Wales</div>
+</div>
+
+{% if not data_loaded %}
+<div class="home-alert">
+  <strong>Pipeline not run yet.</strong>
+  Data files not found. Run <code>python scripts/run_pipeline.py</code> first, then restart the app.
+</div>
+{% endif %}
+
+<!-- Stats bar -->
+<div class="stats-bar">
+  <div class="stat-block">
+    <span class="stat-block-num">{{ area_count }}</span>
+    <div class="stat-block-lbl">Local Authority Areas</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-block-num">669K</span>
+    <div class="stat-block-lbl">Crime Records Analysed</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-block-num">{% if neigh_count %}{{ neigh_count }}{% else %}1,527{% endif %}</span>
+    <div class="stat-block-lbl">Neighbourhoods Mapped</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-block-num">12</span>
+    <div class="stat-block-lbl">Months of Data (2024)</div>
+  </div>
+  <div class="stat-block">
+    <span class="stat-block-num">5</span>
+    <div class="stat-block-lbl">ML Models Applied</div>
+  </div>
+</div>
+
+<!-- Who is this for -->
+<section class="audience-section">
+  <div class="audience-section-title">Who is LiveSafe for?</div>
+  <div class="audience-grid">
+
+    <a href="/area" class="audience-card card-resident">
+      <span class="audience-icon">🏠</span>
+      <div class="audience-who">Residents &amp; Renters</div>
+      <div class="audience-title">Is this neighbourhood right for you?</div>
+      <div class="audience-desc">
+        Search any postcode to instantly see its crime level, trend, and how it
+        ranks against every neighbourhood in the same area.
+      </div>
+      <div class="audience-links">
+        <span class="audience-link">Search by postcode</span>
+        <span class="audience-link">View neighbourhood ranking</span>
+        <span class="audience-link">Check crime trend</span>
+      </div>
+    </a>
+
+    <a href="/rankings" class="audience-card card-investor">
+      <span class="audience-icon">📊</span>
+      <div class="audience-who">Property Investors</div>
+      <div class="audience-title">Which areas are emerging risks or stable bets?</div>
+      <div class="audience-desc">
+        Compare crime intensity, trend direction, and weather exposure across
+        all 15 areas to identify areas improving or deteriorating.
+      </div>
+      <div class="audience-links">
+        <span class="audience-link">View all area rankings</span>
+        <span class="audience-link">Compare two areas side-by-side</span>
+        <span class="audience-link">See crime trend forecasts</span>
+      </div>
+    </a>
+
+    <a href="/analysis" class="audience-card card-council">
+      <span class="audience-icon">🏛</span>
+      <div class="audience-who">Local Councils &amp; Planners</div>
+      <div class="audience-title">Where should resources be targeted?</div>
+      <div class="audience-desc">
+        Machine learning analysis identifies anomalous neighbourhoods, validates
+        classifications against ONS deprivation data, and forecasts future trends.
+      </div>
+      <div class="audience-links">
+        <span class="audience-link">Anomaly detection results</span>
+        <span class="audience-link">IMD validation (Spearman ρ = 0.74)</span>
+        <span class="audience-link">3-month crime forecasts</span>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- Quick nav -->
+<section class="quicknav-section">
+  <div class="quicknav-grid">
+    <a href="/area" class="quicknav-tile">
+      <span class="quicknav-icon">🔍</span>
+      <span class="quicknav-label">Find My Area</span>
+      <span class="quicknav-desc">Postcode search</span>
+    </a>
+    <a href="/rankings" class="quicknav-tile">
+      <span class="quicknav-icon">🏆</span>
+      <span class="quicknav-label">Rankings</span>
+      <span class="quicknav-desc">All 15 areas</span>
+    </a>
+    <a href="/compare" class="quicknav-tile">
+      <span class="quicknav-icon">⇄</span>
+      <span class="quicknav-label">Compare</span>
+      <span class="quicknav-desc">Side by side</span>
+    </a>
+    <a href="/trends" class="quicknav-tile">
+      <span class="quicknav-icon">📈</span>
+      <span class="quicknav-label">Crime Trends</span>
+      <span class="quicknav-desc">Charts &amp; patterns</span>
+    </a>
+    <a href="/analysis" class="quicknav-tile">
+      <span class="quicknav-icon">🤖</span>
+      <span class="quicknav-label">ML Analysis</span>
+      <span class="quicknav-desc">5 models</span>
+    </a>
+    <a href="/about" class="quicknav-tile">
+      <span class="quicknav-icon">📋</span>
+      <span class="quicknav-label">About the Data</span>
+      <span class="quicknav-desc">Sources &amp; methods</span>
+    </a>
+  </div>
+</section>
+
+<!-- Highlights -->
+{% if data_loaded %}
+<section class="highlights-section">
+  <div class="highlights-header">
+    <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--accent);">◈</span>
+    <h2 class="highlights-title">Key findings from 2024 data</h2>
+  </div>
+  <div class="highlights-grid">
+    <div class="highlight-card">
+      <div class="highlight-label hl-coral">Highest crime</div>
+      <span class="highlight-stat">Leeds</span>
+      <div class="highlight-desc">
+        Classified as a <strong>Volatile Risk Area</strong> with Severe Crime
+        Concentration — the highest average monthly crime count in the prototype dataset.
+      </div>
+      <a href="/area?code=E08000035" class="highlight-link">View Leeds profile →</a>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-label hl-green">Most stable</div>
+      <span class="highlight-stat">Herefordshire</span>
+      <div class="highlight-desc">
+        Classified as a <strong>Stable Low-Risk Area</strong> with Very Low
+        Recorded Crime and an improving trend throughout 2024.
+      </div>
+      <a href="/area?code=E06000019" class="highlight-link">View Herefordshire profile →</a>
+    </div>
+    <div class="highlight-card">
+      <div class="highlight-label hl-teal">Strong validation</div>
+      <span class="highlight-stat">ρ = 0.74</span>
+      <div class="highlight-desc">
+        LiveSafe crime intensity rankings show a strong Spearman correlation
+        with the ONS Index of Multiple Deprivation, confirming the system
+        captures real patterns.
+      </div>
+      <a href="/analysis#imd" class="highlight-link">View validation results →</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('heroPostcode').addEventListener('input', function() {
+  const pos = this.selectionStart;
+  this.value = this.value.toUpperCase();
+  this.setSelectionRange(pos, pos);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+{% block title %}Insights{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ML section divider */
+.ml-section-header {
+  display: flex; align-items: center; gap: 0.85rem;
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.ml-section-num {
+  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500;
+  color: var(--accent, #3ecfcf); letter-spacing: 0.05em;
+}
+.ml-section-title {
+  font-size: 1rem; font-weight: 600; color: var(--cloud, #e8f0f7); margin: 0;
+}
+.ml-badge {
+  font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.55rem;
+  border-radius: 20px; background: rgba(62,207,207,0.1);
+  border: 1px solid rgba(62,207,207,0.25); color: var(--accent, #3ecfcf);
+  font-family: var(--font-mono);
+}
+
+/* Two-column chart grid */
+.charts-two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 768px) { .charts-two-col { grid-template-columns: 1fr; } }
+
+/* Accuracy badge */
+.accuracy-badge {
+  text-align: center;
+  background: rgba(76,175,125,0.1);
+  border: 1px solid rgba(76,175,125,0.3);
+  border-radius: 10px; padding: 0.6rem 1rem; min-width: 90px;
+}
+.accuracy-badge-val {
+  display: block; font-family: var(--font-mono); font-size: 1.5rem;
+  font-weight: 700; color: #4caf7d;
+}
+.accuracy-badge-lbl {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--mist, #8fa8c0);
+}
+
+/* Mini bar (anomaly) */
+.mini-bar-wrap { display: flex; align-items: center; gap: 0.5rem; }
+.mini-bar {
+  height: 5px; background: #f0b429; border-radius: 3px;
+  min-width: 2px; max-width: 70px;
+}
+
+/* IMD rho badge */
+.imd-rho-badge {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(129,140,248,0.1);
+  border: 1px solid rgba(129,140,248,0.3);
+  border-radius: 10px; padding: 0.6rem 1.1rem;
+}
+.imd-rho-sym { font-size: 0.8rem; color: #818cf8; font-style: italic; }
+.imd-rho-val { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; color: #818cf8; }
+.imd-rho-p { font-size: 0.7rem; color: var(--mist, #8fa8c0); }
+
+.imd-interpretation {
+  display: flex; gap: 0.65rem; align-items: flex-start;
+  background: rgba(255,255,255,0.03); border-radius: 8px;
+  padding: 0.9rem 1rem; margin: 0.75rem 0;
+  font-size: 0.85rem; color: var(--mist, #8fa8c0); line-height: 1.6;
+}
+
+/* Forecast table helpers */
+.ci-note { font-size: 0.7rem; color: var(--mist, #8fa8c0); margin-left: 2px; }
+.trend-inc { color: #f06060; }
+.trend-dec { color: #4caf7d; }
+.trend-stb { color: #8fa8c0; }
+
+/* No data placeholder */
+.no-data-placeholder {
+  text-align: center; padding: 2rem; color: var(--slate, #6b8299);
+  font-size: 0.85rem; background: rgba(255,255,255,0.02);
+  border-radius: 8px; line-height: 1.8;
+}
+.no-data-placeholder code { color: var(--accent, #3ecfcf); }
+
+/* agreement colours */
+.ag-agree   { color: #4caf7d; font-weight: 500; }
+.ag-partial { color: #f0b429; font-weight: 500; }
+.ag-differ  { color: #f06060; font-weight: 500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Insights</h1>
+<p class="page-subtitle">Patterns across the 15-area prototype set, Jan–Dec 2024.</p>
+
+<!-- EXISTING CHARTS — unchanged -->
+
+<div class="chart-wrap">
+  <div class="chart-title">Average monthly crimes per area</div>
+  <canvas id="chartCrimes" height="80"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-title">Violent vs property crime share</div>
+  <canvas id="chartShares" height="80"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-title">Overall area profiles — distribution</div>
+  <canvas id="chartProfiles" height="120"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-title">Average monthly rainfall (mm)</div>
+  <canvas id="chartRain" height="80"></canvas>
+</div>
+
+{% if clusters_json %}
+<div class="chart-wrap">
+  <div class="chart-title">K-Means clustering — areas by crime and weather features (PCA projection)</div>
+  <div style="font-size:0.8rem;color:var(--mist);margin-bottom:1rem;">
+    Each point is a local authority area. Position is determined by K-Means clustering on 8 features,
+    projected to 2 dimensions using PCA. Colour = cluster assignment. Label = area name.
+    Areas in the same cluster share similar crime and weather characteristics.
+  </div>
+  <canvas id="chartClusters" height="100"></canvas>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-title">Cluster vs rule-based classification — agreement analysis</div>
+  <div style="overflow-x:auto;">
+    <table class="neigh-table" id="clusterTable">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>K-Means Cluster</th>
+          <th>Rule-Based Profile</th>
+          <th>Crime Intensity</th>
+          <th>Avg Monthly Crimes</th>
+          <th>Violent %</th>
+          <th>Trend Slope</th>
+          <th>Agreement</th>
+        </tr>
+      </thead>
+      <tbody id="clusterTableBody"></tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- NEW ML SECTIONS -->
+
+<!-- Random Forest — Feature Importance -->
+<div class="ml-section-header">
+  <span class="ml-section-num">ML·01</span>
+  <h2 class="ml-section-title">Random Forest — Feature Importance &amp; Classification</h2>
+  <span class="ml-badge">Supervised · 5-fold CV · 1,527 neighbourhoods</span>
+</div>
+
+{% if rf_importance_json %}
+<div class="charts-two-col">
+  <div class="chart-wrap" style="margin-bottom:0;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
+      <div>
+        <div class="chart-title" style="margin-bottom:0.25rem;">Feature importance</div>
+        <div style="font-size:0.78rem;color:var(--mist);">Mean Decrease in Impurity across 300 trees</div>
+      </div>
+      {% if rf_accuracy %}
+      <div class="accuracy-badge">
+        <span class="accuracy-badge-val">{{ rf_accuracy }}%</span>
+        <span class="accuracy-badge-lbl">CV accuracy</span>
+      </div>
+      {% endif %}
+    </div>
+    <canvas id="chartFeatureImportance" height="160" style="margin-top:1rem;"></canvas>
+  </div>
+
+  <div class="chart-wrap" style="margin-bottom:0;">
+    <div class="chart-title" style="margin-bottom:0.25rem;">Per-fold accuracy (5-fold CV)</div>
+    <div style="font-size:0.78rem;color:var(--mist);margin-bottom:1rem;">
+      Stratified folds. Each bar = held-out test fold accuracy.
+      Dashed line = mean. High accuracy means the Random Forest
+      can learn the same patterns as the rule-based labels.
+    </div>
+    <canvas id="chartCvFolds" height="160"></canvas>
+  </div>
+</div>
+<div style="font-size:0.78rem;color:var(--slate);margin-bottom:1.5rem;padding:0.6rem 0.9rem;background:rgba(255,255,255,0.02);border-radius:6px;border-left:3px solid rgba(62,207,207,0.3);">
+  Feature importance reveals which variables most strongly drive classification.
+  If <code>avg_monthly_crimes</code> dominates, the rule-based thresholds are well-calibrated.
+  Unexpected rankings (e.g. <code>crime_variability</code> ranking highly) suggest
+  patterns the rule-based system may not fully capture.
+</div>
+
+{% else %}
+<div class="no-data-placeholder">
+  Run <code>python random_forest_classifier.py</code> to generate feature importance data.
+</div>
+{% endif %}
+
+<!-- Isolation Forest — Anomaly Detection -->
+<div class="ml-section-header">
+  <span class="ml-section-num">ML·02</span>
+  <h2 class="ml-section-title">Isolation Forest — Anomaly Detection</h2>
+  <span class="ml-badge">Unsupervised · 1,527 neighbourhoods · contamination=8%</span>
+</div>
+
+{% if anomaly_summary_json %}
+<div style="font-size:0.82rem;color:var(--mist);margin-bottom:1rem;line-height:1.65;padding:0.75rem 1rem;background:rgba(240,180,11,0.06);border:1px solid rgba(240,180,11,0.2);border-radius:8px;">
+  Isolation Forest detects statistical outliers by random partitioning — observations that require
+  fewer tree splits to isolate are anomalous. Unlike K-Means (which groups similar areas), this
+  specifically identifies neighbourhoods that <em>don't fit any group</em>. Yellow dots on the
+  Area Profile page mark these neighbourhoods in the ranking table.
+</div>
+<div style="overflow-x:auto;margin-bottom:1.5rem;">
+  <table class="neigh-table">
+    <thead>
+      <tr>
+        <th>Local Authority</th>
+        <th>Total Neighbourhoods</th>
+        <th>Global Anomalies</th>
+        <th style="min-width:120px;">% Anomalous</th>
+        <th>Within-LA Anomalies</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in anomaly_summary_json %}
+      <tr>
+        <td>{{ row.la_name or row.force or row.la_code }}</td>
+        <td style="font-family:var(--font-mono);">{{ row.total_neighbourhoods }}</td>
+        <td style="font-family:var(--font-mono);">{{ row.global_anomalies }}</td>
+        <td>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar" style="width:{{ [row.global_anomaly_pct | float, 100] | min | round(0) | int }}px;"></div>
+            <span style="font-family:var(--font-mono);font-size:0.82rem;">{{ row.global_anomaly_pct }}%</span>
+          </div>
+        </td>
+        <td style="font-family:var(--font-mono);">{{ row.within_la_anomalies or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="no-data-placeholder">
+  Run <code>python isolation_forest.py</code> to generate anomaly detection data.
+</div>
+{% endif %}
+
+<!-- Linear Regression — Crime Forecasting -->
+<div class="ml-section-header">
+  <span class="ml-section-num">ML·03</span>
+  <h2 class="ml-section-title">Linear Regression — Crime Trend Forecasting</h2>
+  <span class="ml-badge">Supervised Regression · Train Jan–Oct · Test Nov–Dec</span>
+</div>
+
+{% if forecast_metrics_json %}
+<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1rem;">
+  {% set total_mae = namespace(v=0, n=0) %}
+  {% for m in forecast_metrics_json %}
+    {% if m.mae %}
+      {% set total_mae.v = total_mae.v + m.mae %}
+      {% set total_mae.n = total_mae.n + 1 %}
+    {% endif %}
+  {% endfor %}
+  <div style="display:flex;flex-direction:column;gap:0.2rem;">
+    <span style="font-family:var(--font-mono);font-size:1.25rem;font-weight:600;color:var(--cloud);">
+      {{ (total_mae.v / total_mae.n) | round(1) if total_mae.n > 0 else '—' }}
+    </span>
+    <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);">Mean MAE across areas</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:0.2rem;">
+    <span style="font-family:var(--font-mono);font-size:1.25rem;font-weight:600;color:var(--cloud);">15</span>
+    <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);">Areas modelled</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:0.2rem;">
+    <span style="font-family:var(--font-mono);font-size:1.25rem;font-weight:600;color:var(--cloud);">3</span>
+    <span style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--slate);">Months projected ahead</span>
+  </div>
+</div>
+
+<div style="overflow-x:auto;margin-bottom:0.5rem;">
+  <table class="neigh-table">
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>Slope (crimes/mo)</th>
+        <th>Direction</th>
+        <th>MAE</th>
+        <th>RMSE</th>
+        <th>+1mo</th>
+        <th>+2mo</th>
+        <th>+3mo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in forecast_metrics_json %}
+      <tr>
+        <td>{{ m.area }}</td>
+        <td style="font-family:var(--font-mono);{% if m.slope and m.slope > 0.5 %}color:#f06060;{% elif m.slope and m.slope < -0.5 %}color:#4caf7d;{% endif %}">
+          {% if m.slope %}{% if m.slope > 0 %}+{% endif %}{{ m.slope | round(2) }}{% else %}—{% endif %}
+        </td>
+        <td>
+          <span class="{% if m.trend == 'Increasing' %}trend-inc{% elif m.trend == 'Decreasing' %}trend-dec{% else %}trend-stb{% endif %}">
+            {{ m.trend or '—' }}
+          </span>
+        </td>
+        <td style="font-family:var(--font-mono);">{{ m.mae | round(1) if m.mae else '—' }}</td>
+        <td style="font-family:var(--font-mono);">{{ m.rmse | round(1) if m.rmse else '—' }}</td>
+        {% if forecast_projections_json %}
+          {% for months_ahead in [1, 2, 3] %}
+            {% set proj = namespace(found=none) %}
+            {% for p in forecast_projections_json %}
+              {% if p.area == m.area and p.months_ahead == months_ahead %}
+                {% set proj.found = p %}
+              {% endif %}
+            {% endfor %}
+            <td style="font-family:var(--font-mono);">
+              {% if proj.found %}
+                {{ proj.found.predicted_crimes | round(0) | int }}
+                <span class="ci-note">[{{ proj.found.ci_lower | round(0) | int }}–{{ proj.found.ci_upper | round(0) | int }}]</span>
+              {% else %}—{% endif %}
+            </td>
+          {% endfor %}
+        {% else %}
+          <td colspan="3" style="color:var(--slate);">—</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div style="font-size:0.75rem;color:var(--slate);margin-bottom:1.5rem;">
+  Projections show predicted monthly crime count. 95% confidence intervals in brackets.
+  Wide intervals reflect the inherent uncertainty of extrapolating from 12 data points per area.
+</div>
+
+{% else %}
+<div class="no-data-placeholder">
+  Run <code>python crime_forecasting.py</code> to generate forecasting data.
+</div>
+{% endif %}
+
+<!-- IMD Validation — Spearman Correlation -->
+<div class="ml-section-header">
+  <span class="ml-section-num">ML·04</span>
+  <h2 class="ml-section-title">External Validation — IMD Correlation</h2>
+  <span class="ml-badge">Spearman ρ · ONS IoD2019 Crime Domain</span>
+</div>
+
+{% if imd_validation_json %}
+<div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:1rem;">
+  <div class="imd-rho-badge">
+    <span class="imd-rho-sym">ρ</span>
+    <span class="imd-rho-val">{{ imd_validation_json.spearman_r }}</span>
+    <span class="imd-rho-p">p = {{ imd_validation_json.spearman_p }}</span>
+  </div>
+  {% if imd_validation_json.kendall_tau %}
+  <div class="imd-rho-badge" style="background:rgba(248,196,20,0.08);border-color:rgba(248,196,20,0.25);">
+    <span class="imd-rho-sym" style="color:#f0b429;">τ</span>
+    <span class="imd-rho-val" style="color:#f0b429;">{{ imd_validation_json.kendall_tau | round(4) }}</span>
+    <span class="imd-rho-p">Kendall's tau</span>
+  </div>
+  {% endif %}
+  <div style="flex:1;min-width:240px;">
+    <div class="imd-interpretation">
+      <span>ℹ</span>
+      <span>
+        LiveSafe crime intensity rankings compared against ONS Index of Multiple Deprivation 2019
+        crime domain scores using Spearman rank correlation.
+        A positive ρ indicates alignment with established deprivation measures.
+        Methodological differences exist: IMD uses 2019 victim survey data while
+        LiveSafe uses 2024 recorded crime only.
+      </span>
+    </div>
+  </div>
+</div>
+
+{% if imd_comparison_json %}
+<div style="overflow-x:auto;margin-bottom:1.5rem;">
+  <table class="neigh-table">
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>LiveSafe Intensity</th>
+        <th>LiveSafe Rank</th>
+        <th>IMD Crime Score</th>
+        <th>IMD Rank</th>
+        <th>Rank Diff</th>
+        <th>Agreement</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in imd_comparison_json %}
+      <tr>
+        <td>{{ row.la_name or row.la_code }}</td>
+        <td style="font-size:0.82rem;">{{ row.crime_intensity_label or row.crime_intensity or '—' }}</td>
+        <td style="font-family:var(--font-mono);">{{ row.intensity_rank or '—' }}</td>
+        <td style="font-family:var(--font-mono);">{{ row.imd_crime_score | round(3) if row.imd_crime_score else '—' }}</td>
+        <td style="font-family:var(--font-mono);">{{ row.imd_rank or '—' }}</td>
+        <td style="font-family:var(--font-mono);{% if row.rank_diff and row.rank_diff <= 2 %}color:#4caf7d;{% elif row.rank_diff and row.rank_diff > 4 %}color:#f06060;{% endif %}">
+          {{ row.rank_diff or '—' }}
+        </td>
+        <td>
+          <span class="{% if row.agreement == 'Strong' %}ag-agree{% elif row.agreement == 'Moderate' %}ag-partial{% elif row.agreement == 'Weak' %}ag-differ{% endif %}">
+            {{ row.agreement or '—' }}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div style="font-size:0.75rem;color:var(--slate);">
+  Rank diff = |LiveSafe rank − IMD rank|. Strong ≤ 2 &middot; Moderate ≤ 4 &middot; Weak > 4.
+  Welsh areas (Cardiff, Swansea) use WIMD 2019 which uses a different scale.
+</div>
+{% endif %}
+
+{% else %}
+<div class="no-data-placeholder">
+  Run <code>python imd_validation.py</code> to generate IMD comparison data.<br>
+  IMD data available free from
+  <a href="https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019"
+     style="color:var(--accent);" target="_blank" rel="noopener">gov.uk</a>.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const areas = {{ areas_json | safe }};
+{% if clusters_json %}const clusters = {{ clusters_json | safe }};{% else %}const clusters = null;{% endif %}
+{% if rf_importance_json %}const rfImportance = {{ rf_importance_json | safe }};{% else %}const rfImportance = null;{% endif %}
+{% if rf_fold_scores_json %}const rfFoldScores = {{ rf_fold_scores_json | safe }};{% else %}const rfFoldScores = null;{% endif %}
+{% if rf_accuracy %}const rfMeanAcc = {{ rf_accuracy }};{% else %}const rfMeanAcc = null;{% endif %}
+
+const sorted = [...areas].sort((a,b) => b.avg_monthly_crimes - a.avg_monthly_crimes);
+const names  = sorted.map(a => a.la_name);
+
+const ACCENT   = '#3ecfcf';
+const CORAL    = '#f06060';
+const GOLD     = '#f0b429';
+const MIST     = '#8fa8c0';
+const SAGE     = '#4caf7d';
+const ORANGE   = '#f07840';
+const NAVY_MID = '#1a2e42';
+const GRID_C   = 'rgba(255,255,255,0.06)';
+const TICK_C   = '#8fa8c0';
+
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.color = TICK_C;
+
+const baseScales = {
+  x: { grid:{color:GRID_C}, ticks:{color:TICK_C, font:{size:11}} },
+  y: { grid:{color:GRID_C}, ticks:{color:TICK_C, font:{size:11}} },
+};
+
+// 1. Avg monthly crimes 
+new Chart(document.getElementById('chartCrimes'), {
+  type: 'bar',
+  data: {
+    labels: names,
+    datasets: [{
+      label: 'Avg monthly crimes',
+      data: sorted.map(a => Math.round(a.avg_monthly_crimes)),
+      backgroundColor: sorted.map(a => {
+        const l = a.crime_intensity_label;
+        if (l === 'Severe Crime Concentration') return CORAL;
+        if (l === 'Elevated Crime Level')       return GOLD;
+        if (l === 'Moderate Crime Level')       return ACCENT;
+        return SAGE;
+      }),
+      borderRadius: 4, borderSkipped: false,
+    }]
+  },
+  options: { responsive:true, plugins:{legend:{display:false}}, scales:baseScales }
+});
+
+// 2. Violent vs property share
+new Chart(document.getElementById('chartShares'), {
+  type: 'bar',
+  data: {
+    labels: names,
+    datasets: [
+      { label:'Violent %', data:sorted.map(a=>+(a.avg_violent_share*100).toFixed(1)),
+        backgroundColor:CORAL, borderRadius:4, borderSkipped:false, stack:'stack' },
+      { label:'Property %', data:sorted.map(a=>+(a.avg_property_share*100).toFixed(1)),
+        backgroundColor:GOLD, borderRadius:4, borderSkipped:false, stack:'stack' }
+    ]
+  },
+  options: {
+    responsive:true,
+    plugins:{legend:{labels:{color:TICK_C,font:{size:12}}}},
+    scales:{
+      x:{...baseScales.x, stacked:true},
+      y:{...baseScales.y, stacked:true}
+    }
+  }
+});
+
+// 3. Profile distribution
+const profileCounts = {};
+areas.forEach(a => { profileCounts[a.overall_profile] = (profileCounts[a.overall_profile]||0)+1; });
+const profileLabels = Object.keys(profileCounts);
+const profileColors = profileLabels.map(p => {
+  if (p.includes('Stable'))     return SAGE;
+  if (p.includes('Weather'))    return ACCENT;
+  if (p.includes('Crime-Sens')) return GOLD;
+  if (p.includes('Persistent')) return CORAL;
+  if (p.includes('Emerging') || p.includes('Volatile')) return ORANGE;
+  return MIST;
+});
+new Chart(document.getElementById('chartProfiles'), {
+  type: 'doughnut',
+  data: {
+    labels: profileLabels,
+    datasets: [{ data:Object.values(profileCounts), backgroundColor:profileColors,
+                 borderColor:NAVY_MID, borderWidth:3 }]
+  },
+  options: { responsive:true, plugins:{legend:{position:'right',
+    labels:{color:TICK_C,font:{size:12},padding:16}}} }
+});
+
+// 4. Rainfall 
+const rainSorted = [...areas].sort((a,b) => b.avg_monthly_prcp - a.avg_monthly_prcp);
+new Chart(document.getElementById('chartRain'), {
+  type: 'bar',
+  data: {
+    labels: rainSorted.map(a=>a.la_name),
+    datasets: [{
+      label: 'Avg monthly rainfall (mm)',
+      data: rainSorted.map(a=>+a.avg_monthly_prcp.toFixed(1)),
+      backgroundColor: rainSorted.map(a => {
+        const l = a.weather_exposure_label;
+        if (l==='High Weather Stress') return CORAL;
+        if (l==='Rain-Exposed')        return ACCENT;
+        if (l==='Cold-Exposed')        return '#3e9fcf';
+        return MIST;
+      }),
+      borderRadius:4, borderSkipped:false,
+    }]
+  },
+  options:{ responsive:true, plugins:{legend:{display:false}}, scales:baseScales }
+});
+
+// 5. K-Means scatter
+if (clusters) {
+  const CLUSTER_COLORS = ['#3ecfcf','#f0b429','#f06060','#4caf7d'];
+  const clusterNames   = [...new Set(clusters.map(c=>c.cluster_name))].sort();
+
+  const datasets = clusterNames.map((cname, i) => ({
+    label: cname,
+    data: clusters.filter(c => c.cluster_name === cname)
+      .map(c => ({ x: c.pca_x, y: c.pca_y, label: c.la_name, profile: c.overall_profile })),
+    backgroundColor: CLUSTER_COLORS[i % CLUSTER_COLORS.length] + 'cc',
+    borderColor:     CLUSTER_COLORS[i % CLUSTER_COLORS.length],
+    borderWidth: 2, pointRadius: 10, pointHoverRadius: 13,
+  }));
+
+  const clusterChart = new Chart(document.getElementById('chartClusters'), {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels:{color:TICK_C, font:{size:12}}, position:'top' },
+        tooltip: { callbacks: { label: ctx => [`${ctx.raw.label}`, `Profile: ${ctx.raw.profile}`] } }
+      },
+      scales: {
+        x: { ...baseScales.x, title:{display:true,text:'PCA Component 1',color:TICK_C} },
+        y: { ...baseScales.y, title:{display:true,text:'PCA Component 2',color:TICK_C} },
+      }
+    }
+  });
+
+  const originalDraw = clusterChart.draw.bind(clusterChart);
+  clusterChart.draw = function() {
+    originalDraw();
+    const ctx2 = clusterChart.ctx;
+    clusterChart.data.datasets.forEach((dataset, di) => {
+      dataset.data.forEach((point, pi) => {
+        const meta = clusterChart.getDatasetMeta(di);
+        if (meta.data[pi]) {
+          const { x, y } = meta.data[pi].getProps(['x','y'], true);
+          ctx2.save();
+          ctx2.font = '10px DM Sans, sans-serif';
+          ctx2.fillStyle = TICK_C;
+          ctx2.textAlign = 'center';
+          ctx2.fillText(point.label.split(',')[0], x, y - 14);
+          ctx2.restore();
+        }
+      });
+    });
+  };
+  clusterChart.draw();
+
+  // Cluster comparison table
+  const tbody = document.getElementById('clusterTableBody');
+  function agreementLevel(cluster, profile) {
+    const highCluster = cluster.includes('High');
+    const highProfile = profile.includes('Crime-Sensitive') || profile.includes('Volatile') || profile.includes('Emerging') || profile.includes('Persistent');
+    const lowCluster  = cluster.includes('Low');
+    const lowProfile  = profile.includes('Stable') || profile.includes('Weather-Sensitive');
+    if ((highCluster && highProfile) || (lowCluster && lowProfile)) return 'agree';
+    if (cluster.includes('Moderate') && !highProfile && !lowProfile) return 'partial';
+    return 'disagree';
+  }
+  const sortedClusters = [...clusters].sort((a,b)=>a.cluster_name.localeCompare(b.cluster_name));
+  sortedClusters.forEach(c => {
+    const ag = agreementLevel(c.cluster_name, c.overall_profile);
+    const agColor = ag==='agree'?'#4caf7d': ag==='partial'?'#f0b429':'#f06060';
+    const agLabel = ag==='agree'?'Agrees': ag==='partial'?'Partial':'Differs';
+    tbody.innerHTML += `<tr>
+      <td>${c.la_name}</td>
+      <td><span class="badge badge-info" style="font-size:0.72rem;">${c.cluster_name}</span></td>
+      <td><span class="badge badge-secondary" style="font-size:0.72rem;">${c.overall_profile}</span></td>
+      <td style="font-size:0.82rem;">${c.crime_intensity_label||'—'}</td>
+      <td>${Math.round(c.avg_monthly_crimes)}</td>
+      <td>${(c.avg_violent_share*100).toFixed(1)}%</td>
+      <td>${c.crime_trend_slope>=0?'+':''}${c.crime_trend_slope.toFixed(2)}</td>
+      <td><span style="color:${agColor};font-weight:500;font-size:0.82rem;">${agLabel}</span></td>
+    </tr>`;
+  });
+}
+
+// 6. Random Forest — Feature Importance
+if (rfImportance) {
+  const fiLabels = rfImportance.map(r => r.feature);
+  const fiValues = rfImportance.map(r => r.importance_pct);
+
+  new Chart(document.getElementById('chartFeatureImportance'), {
+    type: 'bar',
+    data: {
+      labels: fiLabels,
+      datasets: [{
+        label: 'Importance (%)',
+        data: fiValues,
+        backgroundColor: fiLabels.map((_, i) => i === 0 ? ACCENT + 'dd' : ACCENT + '55'),
+        borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ...baseScales.x, ticks: { ...baseScales.x.ticks, callback: v => v + '%' } },
+        y: { ...baseScales.y }
+      }
+    }
+  });
+}
+
+// 7. CV Fold Accuracy
+if (rfFoldScores) {
+  const foldAccs = rfFoldScores.map(r => +(r.accuracy * 100).toFixed(1));
+  const meanAcc  = rfMeanAcc || (foldAccs.reduce((a,b)=>a+b,0)/foldAccs.length);
+
+  new Chart(document.getElementById('chartCvFolds'), {
+    type: 'bar',
+    data: {
+      labels: foldAccs.map((_,i) => `Fold ${i+1}`),
+      datasets: [{
+        label: 'Accuracy (%)',
+        data: foldAccs,
+        backgroundColor: SAGE + 'cc',
+        borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        annotation: {
+          annotations: {
+            meanLine: {
+              type: 'line',
+              yMin: meanAcc, yMax: meanAcc,
+              borderColor: ACCENT, borderWidth: 2, borderDash: [5, 4],
+              label: { display: true, content: `Mean: ${meanAcc.toFixed(1)}%`,
+                       color: ACCENT, font: { size: 11 }, position: 'end' }
+            }
+          }
+        }
+      },
+      scales: {
+        x: { ...baseScales.x },
+        y: { ...baseScales.y, min: 0, max: 100,
+             ticks: { ...baseScales.y.ticks, callback: v => v + '%' } }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
