@@ -88,8 +88,20 @@ def _safe_parquet(path):
     p = Path(path)
     return pd.read_parquet(p) if p.exists() else pd.DataFrame()
 
-def _load_insights_ml_vars():
-    """Load all ML result files for the insights page."""
+def _load_projections():
+    """The stored 3-month projections, joined to the recorded counts when the backtest exists.
+
+    The projections are for January to March 2025, which is in the past, so the pages show
+    them as a backtest next to what was recorded (forecast_evaluation.py writes the join).
+    """
+    backtest = _safe_csv(PROCESSED_DIR / "forecast_projection_backtest.csv")
+    if not backtest.empty:
+        return backtest.astype(object).where(backtest.notna(), None)
+    return _safe_csv(PROCESSED_DIR / "forecast_projections.csv")
+
+
+def _load_analysis_ml_vars():
+    """Load all ML result files for the analysis page."""
 
     # Random Forest
     rf_imp_df  = _safe_csv(PROCESSED_DIR / "rf_feature_importance.csv")
@@ -97,15 +109,15 @@ def _load_insights_ml_vars():
 
     rf_importance_json  = None
     rf_fold_scores_json = None
-    rf_accuracy         = None
+    rf_agreement        = None
 
     if not rf_imp_df.empty and "feature" in rf_imp_df.columns:
         rf_imp_df = rf_imp_df.sort_values("importance_pct", ascending=False)
         rf_importance_json = rf_imp_df[["feature", "importance_pct"]].to_json(orient="records")
 
-    if not rf_fold_df.empty and "accuracy" in rf_fold_df.columns:
-        rf_fold_scores_json = rf_fold_df[["accuracy"]].to_json(orient="records")
-        rf_accuracy = round(float(rf_fold_df["accuracy"].mean()) * 100, 1)
+    if not rf_fold_df.empty and "agreement" in rf_fold_df.columns:
+        rf_fold_scores_json = rf_fold_df[["agreement"]].to_json(orient="records")
+        rf_agreement = round(float(rf_fold_df["agreement"].mean()) * 100, 1)
 
     # Isolation Forest
     anomaly_df = _safe_csv(PROCESSED_DIR / "anomaly_summary.csv")
@@ -113,7 +125,7 @@ def _load_insights_ml_vars():
 
     # Crime Forecasting
     fmet_df  = _safe_csv(PROCESSED_DIR / "forecast_metrics.csv")
-    fproj_df = _safe_csv(PROCESSED_DIR / "forecast_projections.csv")
+    fproj_df = _load_projections()
     forecast_metrics_json     = fmet_df.to_dict("records")  if not fmet_df.empty  else None
     forecast_projections_json = fproj_df.to_dict("records") if not fproj_df.empty else None
 
@@ -140,7 +152,7 @@ def _load_insights_ml_vars():
     return dict(
         rf_importance_json=rf_importance_json,
         rf_fold_scores_json=rf_fold_scores_json,
-        rf_accuracy=rf_accuracy,
+        rf_agreement=rf_agreement,
         anomaly_summary_json=anomaly_summary_json,
         forecast_metrics_json=forecast_metrics_json,
         forecast_projections_json=forecast_projections_json,
@@ -195,7 +207,7 @@ def _get_area_forecast(la_name):
         return None, None
 
     met_df  = _safe_csv(PROCESSED_DIR / "forecast_metrics.csv")
-    proj_df = _safe_csv(PROCESSED_DIR / "forecast_projections.csv")
+    proj_df = _load_projections()
     area_forecast    = None
     area_projections = None
 
@@ -393,7 +405,7 @@ def analysis():
         cluster_cols = [c for c in cluster_cols if c in cdf.columns]
         clusters_json = json.dumps([area_to_dict(r) for _, r in cdf[cluster_cols].iterrows()])
 
-    ml_vars = _load_insights_ml_vars()
+    ml_vars = _load_analysis_ml_vars()
     return render_template("analysis.html",
                            areas_json=areas_json,
                            clusters_json=clusters_json,

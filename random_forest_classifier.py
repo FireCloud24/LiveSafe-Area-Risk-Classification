@@ -1,3 +1,11 @@
+"""Stand-alone Random Forest check with four features (crime count, two shares, trend).
+
+A smaller model than Notebook 1 (which uses 13 features), kept as a quick command-line check.
+It writes rf_script_* files only. The app and the README read the files Notebook 1 writes
+(rf_fold_scores.csv, rf_feature_importance.csv, ml_model_comparison.csv), so the two never
+overwrite each other. The figures are agreement with the rule-based label, not accuracy:
+the label is computed from avg_monthly_crimes, which is also a feature.
+"""
 import sys
 import pandas as pd
 import numpy as np
@@ -168,12 +176,12 @@ def train_and_evaluate(X, y, class_names, feature_names):
     # Cross-validated predictions
     y_pred = cross_val_predict(rf, X_scaled, y, cv=cv)
 
-    # Cross-validated accuracy scores per fold
+    # Cross-validated agreement with the rule label, per fold
     fold_scores = cross_val_score(rf, X_scaled, y, cv=cv, scoring="accuracy")
 
     print(f"\nCross-Validation Results ({CV_FOLDS}-fold):")
-    print(f"  Accuracy per fold: {[f'{s:.3f}' for s in fold_scores]}")
-    print(f"  Mean accuracy:     {fold_scores.mean():.3f} ± {fold_scores.std():.3f}")
+    print(f"  Agreement per fold: {[f'{s:.3f}' for s in fold_scores]}")
+    print(f"  Mean agreement:    {fold_scores.mean():.3f} ± {fold_scores.std():.3f}")
 
     # Full classification report
     report_str = classification_report(y, y_pred, target_names=class_names)
@@ -213,17 +221,17 @@ def save_results(df_original, y_pred, le, fold_scores, report_df, cm_df, importa
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Classification report
-    report_path = OUTPUT_DIR / "rf_classification_report.csv"
+    report_path = OUTPUT_DIR / "rf_script_classification_report.csv"
     report_df.to_csv(report_path)
     print(f"\nSaved classification report to {report_path}")
 
     # Feature importance
-    importance_path = OUTPUT_DIR / "rf_feature_importance.csv"
+    importance_path = OUTPUT_DIR / "rf_script_feature_importance.csv"
     importance_df.to_csv(importance_path, index=False)
     print(f"Saved feature importance to {importance_path}")
 
     # Confusion matrix
-    cm_path = OUTPUT_DIR / "rf_confusion_matrix.csv"
+    cm_path = OUTPUT_DIR / "rf_script_confusion_matrix.csv"
     cm_df.to_csv(cm_path)
     print(f"Saved confusion matrix to {cm_path}")
 
@@ -240,21 +248,21 @@ def save_results(df_original, y_pred, le, fold_scores, report_df, cm_df, importa
     # Save fold scores
     scores_df = pd.DataFrame({
         "fold": range(1, len(fold_scores) + 1),
-        "accuracy": fold_scores,
+        "agreement": fold_scores,
     })
-    scores_path = OUTPUT_DIR / "rf_fold_scores.csv"
+    scores_path = OUTPUT_DIR / "rf_script_fold_scores.csv"
     scores_df.to_csv(scores_path, index=False)
     print(f"Saved fold scores to {scores_path}")
 
     # Save a summary text file for easy reference
-    summary_path = OUTPUT_DIR / "rf_summary.txt"
+    summary_path = OUTPUT_DIR / "rf_script_summary.txt"
     with open(summary_path, "w") as f:
-        f.write("Random Forest Classification Summary\n")
+        f.write("Random Forest: agreement with the rule-based label (random_forest_classifier.py)\n")
         f.write("=" * 50 + "\n\n")
         f.write(f"Total samples: {len(y_pred)}\n")
         f.write(f"CV Folds: {len(fold_scores)}\n")
-        f.write(f"Mean accuracy: {fold_scores.mean():.4f}\n")
-        f.write(f"Std accuracy:  {fold_scores.std():.4f}\n\n")
+        f.write(f"Mean agreement with the rule label: {fold_scores.mean():.4f}\n")
+        f.write(f"Std agreement:  {fold_scores.std():.4f}\n\n")
         f.write("Feature Importance:\n")
         for _, row in importance_df.iterrows():
             f.write(f"  {row['feature']}: {row['importance_pct']:.1f}%\n")

@@ -1,0 +1,5 @@
+feature,importance,importance_pct
+avg_monthly_crimes,0.5161753213070105,51.62
+property_share,0.17279333294994692,17.28
+trend_slope,0.1631008383704082,16.31
+violent_share,0.1479305073726345,14.79

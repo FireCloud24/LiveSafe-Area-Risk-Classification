@@ -1,10 +1,10 @@
-Random Forest Classification Summary
+Random Forest: agreement with the rule-based label (random_forest_classifier.py)
 ==================================================
 
 Total samples: 388
 CV Folds: 5
-Mean accuracy: 0.6674
-Std accuracy:  0.0684
+Mean agreement with the rule label: 0.6674
+Std agreement:  0.0684
 
 Feature Importance:
   avg_monthly_crimes: 51.6%

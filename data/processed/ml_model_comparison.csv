@@ -1,4 +1,4 @@
-Model,Test_Accuracy,Weighted_F1,CV_Mean,CV_Std,Features_Used,Measures,N_Total,N_Test
+Model,Test_Agreement,Weighted_F1,CV_Mean,CV_Std,Features_Used,Measures,N_Total,N_Test
 Majority class,0.34615384615384615,0.178021978021978,0.3479520479520479,0.0022023384300747925,None,Baseline,388,78
 Random Forest,0.6538461538461539,0.6571994832864397,0.7472527472527472,0.035459766829307675,All 13,Agreement with rule label (circular: label is computed from a feature),388,78
 Gradient Boosting,0.7307692307692307,0.7320261437908496,0.8635031635031634,0.02720887829377344,All 13,Agreement with rule label (circular: label is computed from a feature),388,78
