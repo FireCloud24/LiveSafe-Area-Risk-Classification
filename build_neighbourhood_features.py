@@ -1,8 +1,20 @@
+"""Build neighbourhood features and within-council labels.
+
+    python build_neighbourhood_features.py
+
+Uses the raw neighbourhood download if it is present (data/raw/neighbourhoods/, written by
+download_neighbourhoods.py). If it is not, it re-derives the tables from the committed
+neighbourhood_features.parquet, which holds the same per-neighbourhood aggregates.
+
+Either way every neighbourhood is assigned to the council its centroid lies in
+(council_assignment.py); neighbourhoods outside all study councils are dropped.
+"""
 import json, sys
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from settings import PROCESSED_DIR, VIOLENT_CATEGORIES, PROPERTY_CATEGORIES
+from council_assignment import assign_councils, scope_summary
 
 ROOT        = Path(__file__).resolve().parent
 NEIGH_DIR   = ROOT / "data" / "raw" / "neighbourhoods"
@@ -10,15 +22,19 @@ META_FILE   = NEIGH_DIR / "neighbourhood_meta.json"
 CRIMES_FILE = NEIGH_DIR / "neighbourhood_crimes.csv"
 OUT_FEAT    = PROCESSED_DIR / "neighbourhood_features.parquet"
 OUT_CLASS   = PROCESSED_DIR / "neighbourhood_classified.parquet"
+OUT_REPORT  = PROCESSED_DIR / "neighbourhood_scope_fix.csv"
+OUT_SUMMARY = PROCESSED_DIR / "neighbourhood_scope_fix_summary.json"
+
+FEATURE_COLUMNS = [
+    "la_code", "neighbourhood_id", "total_crimes", "violent_count", "property_count",
+    "months_present", "avg_monthly_crimes", "violent_share", "property_share",
+    "trend_slope", "top_crime_category", "la_name", "neighbourhood_name",
+    "centroid_lat", "centroid_lon",
+]
 
 
-def build_neighbourhood_features():
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-
-    if not META_FILE.exists() or not CRIMES_FILE.exists():
-        print("ERROR: Run download_neighbourhoods.py first.")
-        sys.exit(1)
-
+def features_from_raw() -> pd.DataFrame:
+    """Aggregate the raw download to one row per (downloaded council label, neighbourhood)."""
     print("Loading neighbourhood data...")
     with open(META_FILE) as fh:
         meta = pd.DataFrame(json.load(fh))
@@ -79,10 +95,11 @@ def build_neighbourhood_features():
         on=["la_code","neighbourhood_id"], how="left"
     )
 
-    feat.to_parquet(OUT_FEAT, index=False)
-    print(f"  Features saved: {len(feat)} neighbourhoods")
+    return feat[FEATURE_COLUMNS]
 
-    # Classify neighbourhoods within each LA
+
+def classify_neighbourhoods(feat: pd.DataFrame) -> pd.DataFrame:
+    """Rank and label neighbourhoods within their council."""
     classified_frames = []
 
     for la_code, group in feat.groupby("la_code"):
@@ -115,14 +132,50 @@ def build_neighbourhood_features():
 
         classified_frames.append(g)
 
-    classified = pd.concat(classified_frames, ignore_index=True)
-    classified.to_parquet(OUT_CLASS, index=False)
-    print(f"  Classified: {len(classified)} neighbourhoods → {OUT_CLASS.name}")
+    return pd.concat(classified_frames, ignore_index=True)
 
-    # Summary
-    print("\nNeighbourhood counts per LA:")
-    summary = classified.groupby("la_name")["neighbourhood_id"].count().sort_values(ascending=False)
-    print(summary.to_string())
+
+def build_neighbourhood_features():
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+
+    if META_FILE.exists() and CRIMES_FILE.exists():
+        feat = features_from_raw()
+    elif OUT_FEAT.exists():
+        print(f"Raw download not found; re-deriving from {OUT_FEAT.name}")
+        feat = pd.read_parquet(OUT_FEAT)[FEATURE_COLUMNS]
+    else:
+        print("ERROR: Run download_neighbourhoods.py first.")
+        sys.exit(1)
+
+    # Assign each neighbourhood to the council its centroid lies in
+    before = scope_summary(feat)
+    feat, report = assign_councils(feat)
+    after = scope_summary(feat)
+
+    print("\nCouncil assignment (by neighbourhood centroid):")
+    print(f"  rows before                           : {before['rows']}")
+    print(f"  inside the council they were labelled : {before['inside_labelled_council']}")
+    print(f"  inside another study council          : {before['inside_another_study_council']}")
+    print(f"  outside all study councils            : {before['outside_all_study_councils']}")
+    print(f"  duplicate rows                        : {before['duplicate_rows']}")
+    print(f"  rows after                            : {after['rows']}")
+    print("\nNeighbourhoods per council, before and after:")
+    print(report[["la_name", "rows_before", "rows_after"]].to_string(index=False))
+
+    if before != after:
+        # Only written when the run actually changed something, so the record of the
+        # original problem survives later re-runs on already-corrected data.
+        report.to_csv(OUT_REPORT, index=False)
+        with open(OUT_SUMMARY, "w", encoding="utf-8") as fh:
+            json.dump({"before": before, "after": after}, fh, indent=2)
+        print(f"\n  Report saved: {OUT_REPORT.name}, {OUT_SUMMARY.name}")
+
+    feat.to_parquet(OUT_FEAT, index=False)
+    print(f"  Features saved: {len(feat)} neighbourhoods")
+
+    classified = classify_neighbourhoods(feat)
+    classified.to_parquet(OUT_CLASS, index=False)
+    print(f"  Classified: {len(classified)} neighbourhoods -> {OUT_CLASS.name}")
 
 
 if __name__ == "__main__":

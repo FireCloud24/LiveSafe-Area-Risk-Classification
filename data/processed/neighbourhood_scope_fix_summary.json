@@ -1,0 +1,18 @@
+{
+  "before": {
+    "rows": 1527,
+    "inside_labelled_council": 388,
+    "inside_another_study_council": 133,
+    "outside_all_study_councils": 1006,
+    "duplicate_rows": 416,
+    "unique_neighbourhoods": 1111
+  },
+  "after": {
+    "rows": 388,
+    "inside_labelled_council": 388,
+    "inside_another_study_council": 0,
+    "outside_all_study_councils": 0,
+    "duplicate_rows": 0,
+    "unique_neighbourhoods": 388
+  }
+}

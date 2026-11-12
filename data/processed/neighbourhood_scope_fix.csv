@@ -1,0 +1,16 @@
+la_code,la_name,rows_before,label_correct_before,rows_after,rows_removed_or_moved
+E08000019,Sheffield,18,5,5,13
+E08000035,Leeds,21,6,6,15
+E06000023,"Bristol, City of",123,41,41,82
+E08000026,Coventry,89,7,7,82
+E08000021,Newcastle upon Tyne,35,8,8,27
+E06000016,Leicester,66,24,24,42
+E07000148,Norwich,49,3,3,46
+E07000041,Exeter,213,15,15,198
+E06000047,County Durham,71,64,64,7
+E06000054,Wiltshire,105,55,55,50
+E06000019,"Herefordshire, County of",82,10,10,72
+E06000065,North Yorkshire,36,32,32,4
+E06000052,Cornwall,213,58,58,155
+W06000015,Cardiff,203,28,28,175
+W06000011,Swansea,203,32,32,171

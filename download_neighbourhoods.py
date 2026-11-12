@@ -1,6 +1,7 @@
 import json, time, urllib.request, urllib.parse, csv, sys
 from pathlib import Path
 from settings import LA_CODES, LA_NAME_MAP, START_MONTH, END_MONTH
+from council_assignment import load_councils, council_of_point
 
 # Output paths
 ROOT            = Path(__file__).resolve().parent
@@ -113,6 +114,10 @@ def download_neighbourhoods():
 
     all_meta   = []
     total_rows = 0
+    councils   = load_councils()
+    # A force is downloaded once, however many study councils it covers.
+    forces     = list(dict.fromkeys(LA_TO_FORCE[code] for code in LA_CODES if code in LA_TO_FORCE))
+    skipped_outside = 0
 
     with open(NEIGH_CRIME_FILE, "w", newline="", encoding="utf-8") as crime_fh:
         writer = csv.DictWriter(crime_fh, fieldnames=[
@@ -121,16 +126,9 @@ def download_neighbourhoods():
         ])
         writer.writeheader()
 
-        for la_code in LA_CODES:
-            la_name = LA_NAME_MAP[la_code]
-            force   = LA_TO_FORCE.get(la_code)
-
-            if not force:
-                print(f"  SKIP {la_name} — no force mapping")
-                continue
-
+        for force in forces:
             print(f"\n{'='*55}")
-            print(f"  {la_name} ({la_code}) → force: {force}")
+            print(f"  force: {force}")
             print(f"{'='*55}")
 
             #  Get neighbourhood list
@@ -159,9 +157,18 @@ def download_neighbourhoods():
                     print(f"    No boundary — skipping")
                     continue
 
-                # Store metadata
+                # A force covers more than the study councils: keep a neighbourhood
+                # only if its centroid lies inside one, and label it with that council.
                 lats = [float(p["latitude"])  for p in boundary]
                 lons = [float(p["longitude"]) for p in boundary]
+                la_code = council_of_point(sum(lats)/len(lats), sum(lons)/len(lons), councils)
+                if la_code is None:
+                    print(f"    Outside all study councils, skipping")
+                    skipped_outside += 1
+                    continue
+                la_name = LA_NAME_MAP[la_code]
+
+                # Store metadata
                 all_meta.append({
                     "la_code":            la_code,
                     "la_name":            la_name,
@@ -213,7 +220,8 @@ def download_neighbourhoods():
 
     print(f"\n{'='*55}")
     print(f"DONE")
-    print(f"  {len(all_meta)} neighbourhoods processed")
+    print(f"  {len(all_meta)} neighbourhoods inside the study councils")
+    print(f"  {skipped_outside} neighbourhoods skipped (outside all study councils)")
     print(f"  {total_rows:,} crime records saved")
     print(f"  Meta: {NEIGH_META_FILE}")
     print(f"  Crimes: {NEIGH_CRIME_FILE}")
