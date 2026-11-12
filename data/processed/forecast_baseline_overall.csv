@@ -1,0 +1,5 @@
+method,mean_mae,mean_mae_pct_of_average_month,councils_where_best,n_councils,forecast_dates_per_council,months_ahead,data_from,data_to
+linear_trend_10m,477.33,13.52,0,15,22,1-3,2023-10,2026-09
+linear_trend_all,330.0,9.65,1,15,22,1-3,2023-10,2026-09
+last_value,295.6,8.37,3,15,22,1-3,2023-10,2026-09
+seasonal_naive,215.99,6.35,11,15,22,1-3,2023-10,2026-09

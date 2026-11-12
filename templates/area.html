@@ -361,17 +361,21 @@
         <span class="badge badge-secondary" style="font-size:0.72rem;">Linear Regression · ML</span>
       </div>
       <div style="font-size:0.78rem;color:var(--mist);margin-bottom:0.75rem;">
-        Trained Jan–Oct 2024 &middot; Evaluated Nov–Dec 2024 holdout
+        Line fitted to Jan-Oct 2024. Rolling MAE compares it with a no-model baseline over about three years; lower is better.
       </div>
 
       <div class="forecast-stats-row">
         <div class="forecast-stat-item">
           <span class="forecast-stat-val">{{ area_forecast.mae | round(1) if area_forecast.mae else '—' }}</span>
-          <span class="forecast-stat-lbl">MAE (test)</span>
+          <span class="forecast-stat-lbl">MAE, Nov-Dec 2024 test</span>
         </div>
         <div class="forecast-stat-item">
-          <span class="forecast-stat-val">{{ area_forecast.rmse | round(1) if area_forecast.rmse else '—' }}</span>
-          <span class="forecast-stat-lbl">RMSE</span>
+          <span class="forecast-stat-val">{{ area_forecast.ro_mae_linear | round(1) if area_forecast.ro_mae_linear else '-' }}</span>
+          <span class="forecast-stat-lbl">Rolling MAE: linear trend</span>
+        </div>
+        <div class="forecast-stat-item">
+          <span class="forecast-stat-val">{{ area_forecast.ro_mae_seasonal_naive | round(1) if area_forecast.ro_mae_seasonal_naive else '-' }}</span>
+          <span class="forecast-stat-lbl">Rolling MAE: same month last year</span>
         </div>
         <div class="forecast-stat-item">
           <span class="forecast-stat-val {% if area_forecast.slope and area_forecast.slope > 0.5 %}clr-bad{% elif area_forecast.slope and area_forecast.slope < -0.5 %}clr-good{% endif %}">

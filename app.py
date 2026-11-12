@@ -117,6 +117,10 @@ def _load_insights_ml_vars():
     forecast_metrics_json     = fmet_df.to_dict("records")  if not fmet_df.empty  else None
     forecast_projections_json = fproj_df.to_dict("records") if not fproj_df.empty else None
 
+    # Rolling-origin comparison of the linear trend with simple baselines (Notebook 3)
+    fover_df = _safe_csv(PROCESSED_DIR / "forecast_baseline_overall.csv")
+    forecast_overall_json = fover_df.to_dict("records") if not fover_df.empty else None
+
     # IMD Validation
     imd_val_df  = _safe_csv(PROCESSED_DIR / "imd_validation.csv")
     imd_comp_df = _safe_csv(PROCESSED_DIR / "imd_comparison.csv")
@@ -140,6 +144,7 @@ def _load_insights_ml_vars():
         anomaly_summary_json=anomaly_summary_json,
         forecast_metrics_json=forecast_metrics_json,
         forecast_projections_json=forecast_projections_json,
+        forecast_overall_json=forecast_overall_json,
         imd_validation_json=imd_validation_json,
         imd_comparison_json=imd_comparison_json,
     )

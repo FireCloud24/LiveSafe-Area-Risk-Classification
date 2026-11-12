@@ -1,0 +1,16 @@
+area,mae_last_value,mae_linear_trend_10m,mae_linear_trend_all,mae_seasonal_naive,mae_pct_last_value,mae_pct_linear_trend_10m,mae_pct_linear_trend_all,mae_pct_seasonal_naive,n_forecasts,best_method
+"Bristol, City of",443.0,614.2,438.2,427.0,7.76,10.75,7.67,7.48,66,seasonal_naive
+Cardiff,275.3,422.0,337.0,315.5,7.51,11.52,9.2,8.61,66,last_value
+Cornwall,291.5,591.1,451.7,199.5,9.63,19.53,14.93,6.59,66,seasonal_naive
+County Durham,423.7,679.3,501.1,301.5,8.17,13.09,9.66,5.81,66,seasonal_naive
+Coventry,226.6,353.4,273.5,302.9,7.1,11.07,8.57,9.49,66,last_value
+Exeter,114.3,217.0,193.1,117.7,9.23,17.53,15.6,9.5,66,last_value
+"Herefordshire, County of",102.2,147.5,104.6,73.7,10.12,14.61,10.36,7.3,66,seasonal_naive
+Leeds,618.7,1106.2,644.3,295.5,6.79,12.13,7.07,3.24,66,seasonal_naive
+Leicester,307.5,485.3,332.4,230.6,7.47,11.78,8.07,5.6,66,seasonal_naive
+Newcastle upon Tyne,445.7,659.6,398.5,408.9,12.44,18.42,11.13,11.42,66,linear_trend_all
+North Yorkshire,331.4,644.7,410.7,95.8,9.39,18.26,11.63,2.71,66,seasonal_naive
+Norwich,97.2,136.3,92.2,50.3,6.5,9.12,6.17,3.36,66,seasonal_naive
+Sheffield,392.2,519.5,366.4,192.3,7.13,9.44,6.66,3.49,66,seasonal_naive
+Swansea,152.4,211.3,168.7,128.7,8.19,11.35,9.06,6.91,66,seasonal_naive
+Wiltshire,212.3,372.6,237.6,100.0,8.07,14.16,9.03,3.8,66,seasonal_naive

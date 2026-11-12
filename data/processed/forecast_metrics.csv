@@ -1,16 +1,16 @@
-area,slope,intercept,trend,mae,rmse,train_months,test_months
-"Bristol, City of",127.297,5235.36,Increasing,1463.98,1477.94,10,2
-Cardiff,5.9273,3759.33,Increasing,449.06,450.31,10,2
-Cornwall,51.4364,2890.44,Increasing,715.52,732.91,10,2
-County Durham,62.6545,4822.45,Increasing,720.33,743.29,10,2
-Coventry,15.9212,3396.25,Increasing,486.43,510.82,10,2
-Exeter,20.1394,1202.07,Increasing,244.04,245.36,10,2
-"Herefordshire, County of",0.4303,1034.36,Flat,112.38,119.19,10,2
-Leeds,117.7515,8893.82,Increasing,1294.21,1335.1,10,2
-Leicester,49.4182,3968.42,Increasing,396.31,496.27,10,2
-Newcastle upon Tyne,31.7455,3778.35,Increasing,420.67,456.73,10,2
-North Yorkshire,51.7697,3386.44,Increasing,713.02,715.36,10,2
-Norwich,14.3455,1480.15,Increasing,154.77,166.79,10,2
-Sheffield,35.3515,5508.42,Increasing,482.61,607.32,10,2
-Swansea,-7.6667,1966.0,Decreasing,126.5,178.66,10,2
-Wiltshire,45.3939,2430.73,Increasing,435.86,441.01,10,2
+area,slope,intercept,trend,mae,rmse,train_months,test_months,ro_mae_linear,ro_mae_seasonal_naive,ro_mae_last_value,ro_best_method
+"Bristol, City of",127.297,5235.36,Increasing,1463.98,1477.94,10,2,614.2,427.0,443.0,seasonal_naive
+Cardiff,5.9273,3759.33,Increasing,449.06,450.31,10,2,422.0,315.5,275.3,last_value
+Cornwall,51.4364,2890.44,Increasing,715.52,732.91,10,2,591.1,199.5,291.5,seasonal_naive
+County Durham,62.6545,4822.45,Increasing,720.33,743.29,10,2,679.3,301.5,423.7,seasonal_naive
+Coventry,15.9212,3396.25,Increasing,486.43,510.82,10,2,353.4,302.9,226.6,last_value
+Exeter,20.1394,1202.07,Increasing,244.04,245.36,10,2,217.0,117.7,114.3,last_value
+"Herefordshire, County of",0.4303,1034.36,Flat,112.38,119.19,10,2,147.5,73.7,102.2,seasonal_naive
+Leeds,117.7515,8893.82,Increasing,1294.21,1335.1,10,2,1106.2,295.5,618.7,seasonal_naive
+Leicester,49.4182,3968.42,Increasing,396.31,496.27,10,2,485.3,230.6,307.5,seasonal_naive
+Newcastle upon Tyne,31.7455,3778.35,Increasing,420.67,456.73,10,2,659.6,408.9,445.7,linear_trend_all
+North Yorkshire,51.7697,3386.44,Increasing,713.02,715.36,10,2,644.7,95.8,331.4,seasonal_naive
+Norwich,14.3455,1480.15,Increasing,154.77,166.79,10,2,136.3,50.3,97.2,seasonal_naive
+Sheffield,35.3515,5508.42,Increasing,482.61,607.32,10,2,519.5,192.3,392.2,seasonal_naive
+Swansea,-7.6667,1966.0,Decreasing,126.5,178.66,10,2,211.3,128.7,152.4,seasonal_naive
+Wiltshire,45.3939,2430.73,Increasing,435.86,441.01,10,2,372.6,100.0,212.3,seasonal_naive

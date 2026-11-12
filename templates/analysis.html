@@ -241,21 +241,44 @@
   <div class="ml-section-hdr">
     <span class="ml-num">ML·04</span>
     <h2 class="ml-title">Crime Trend Forecasting</h2>
-    <span class="ml-badge">Linear Regression · Train Jan–Oct · Test Nov–Dec</span>
+    <span class="ml-badge">Linear trend vs baselines · rolling-origin evaluation</span>
   </div>
   <div class="what-this-means">
-    A linear regression model is trained on the first 10 months
-    of 2024 crime data for each area, then tested on November–December which it hasn't seen.
-    This gives us a genuine measure of predictive accuracy (MAE = Mean Absolute Error — lower is better).
-    The model then projects 3 months forward with 95% confidence intervals.
-    Wide confidence bands reflect the honest limitation of forecasting from just 12 data points.
+    A straight line is fitted to each area's monthly crime counts and extended 3 months forward.
+    A forecast only means something next to a baseline, so the line is compared with two rules that
+    need no model: <strong>last value</strong> (next month = this month) and
+    <strong>seasonal naive</strong> (next month = the same month last year). Each method is scored
+    over many forecast dates on about three years of data (rolling-origin evaluation).
+    MAE = mean absolute error in crimes per month; lower is better.
   </div>
+
+  {% if forecast_overall_json %}
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="section-title">Rolling-origin comparison (mean over {{ forecast_overall_json[0].n_councils }} areas, {{ forecast_overall_json[0].data_from }} to {{ forecast_overall_json[0].data_to }})</div>
+    <div style="overflow-x:auto;">
+      <table class="neigh-table">
+        <thead><tr><th>Method</th><th>Mean MAE</th><th>MAE as % of an average month</th><th>Areas where best</th></tr></thead>
+        <tbody>
+          {% for o in forecast_overall_json %}
+          <tr>
+            <td>{{ {'linear_trend_10m':'Linear trend, last 10 months (used for the projections)','linear_trend_all':'Linear trend, all months','last_value':'Last value','seasonal_naive':'Seasonal naive'}.get(o.method, o.method) }}</td>
+            <td style="font-family:var(--font-mono);">{{ o.mean_mae|round(1) }}</td>
+            <td style="font-family:var(--font-mono);">{{ o.mean_mae_pct_of_average_month|round(1) }}%</td>
+            <td style="font-family:var(--font-mono);">{{ o.councils_where_best }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.73rem;color:var(--slate);margin-top:0.75rem;">If the linear trend does not beat the baselines here, the projections below should be read as a rough direction of travel, not as a forecast.</p>
+  </div>
+  {% endif %}
 
   {% if forecast_metrics_json %}
   <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1.25rem;">
     {% set total_mae = namespace(v=0, n=0) %}
     {% for m in forecast_metrics_json %}{% if m.mae %}{% set total_mae.v = total_mae.v + m.mae %}{% set total_mae.n = total_mae.n + 1 %}{% endif %}{% endfor %}
-    <div class="metric-card"><div class="metric-label">Mean MAE</div><div class="metric-value">{{ (total_mae.v / total_mae.n)|round(1) if total_mae.n > 0 else '—' }}</div></div>
+    <div class="metric-card"><div class="metric-label">Mean MAE, single 2024 split</div><div class="metric-value">{{ (total_mae.v / total_mae.n)|round(1) if total_mae.n > 0 else '—' }}</div></div>
     <div class="metric-card"><div class="metric-label">Areas modelled</div><div class="metric-value">{{ forecast_metrics_json|length }}</div></div>
     <div class="metric-card"><div class="metric-label">Months projected</div><div class="metric-value">3</div></div>
   </div>
@@ -264,7 +287,7 @@
     <div style="overflow-x:auto;">
       <table class="neigh-table">
         <thead>
-          <tr><th>Area</th><th>Slope</th><th>Direction</th><th>MAE</th><th>RMSE</th><th>+1 month</th><th>+2 months</th><th>+3 months</th></tr>
+          <tr><th>Area</th><th>Slope</th><th>Direction</th><th>MAE (Nov–Dec 2024)</th><th>Rolling MAE: linear</th><th>Rolling MAE: seasonal naive</th><th>+1 month</th><th>+2 months</th><th>+3 months</th></tr>
         </thead>
         <tbody>
           {% for m in forecast_metrics_json %}
@@ -279,7 +302,8 @@
               </span>
             </td>
             <td style="font-family:var(--font-mono);">{{ m.mae|round(1) if m.mae else '—' }}</td>
-            <td style="font-family:var(--font-mono);">{{ m.rmse|round(1) if m.rmse else '—' }}</td>
+            <td style="font-family:var(--font-mono);">{{ m.ro_mae_linear|round(1) if m.ro_mae_linear else '—' }}</td>
+            <td style="font-family:var(--font-mono);">{{ m.ro_mae_seasonal_naive|round(1) if m.ro_mae_seasonal_naive else '—' }}</td>
             {% if forecast_projections_json %}
               {% for months_ahead in [1,2,3] %}
                 {% set proj = namespace(found=none) %}
@@ -296,7 +320,7 @@
         </tbody>
       </table>
     </div>
-    <p style="font-size:0.73rem;color:var(--slate);margin-top:0.75rem;">95% confidence intervals in brackets. Wide intervals = high uncertainty, not a model failure — it honestly reflects the short training window.</p>
+    <p style="font-size:0.73rem;color:var(--slate);margin-top:0.75rem;">Projections come from a line fitted to January–October 2024; 95% intervals in brackets. The Nov–Dec 2024 MAE is a single two-month test; the rolling MAE columns are the fairer comparison.</p>
   </div>
   {% else %}
   <div class="no-data">Run <code>python crime_forecasting.py</code> to generate forecasting data.</div>
