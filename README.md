@@ -28,7 +28,7 @@ labels. It is **not** a predictive policing tool and makes no claim about where 
 | data.police.uk API | Monthly totals, October 2023 to September 2026 (36 months) | Forecast evaluation only |
 | [ONS Open Geography](https://geoportal.statistics.gov.uk/) | Local Authority District boundaries, December 2024 | Council polygons |
 | [Meteostat](https://meteostat.net/) | Daily temperature and rainfall | Weather exposure labels |
-| English Indices of Deprivation 2019 | IMD scores | External comparison |
+| English Indices of Deprivation 2019 | IMD crime domain scores (approximate, typed in by hand) | External comparison |
 
 Raw downloads are rebuilt by the scripts and are not committed. Cleaned and processed tables
 are in `data/cleaned/` and `data/processed/`.
@@ -71,7 +71,10 @@ The labels are combined into an overall profile such as "Stable Low-Risk Area".
 Output: `area_classified.parquet`.
 
 As an external comparison, the area crime ranking has a Spearman correlation of 0.74
-(p = 0.002) with the IMD deprivation ranking (`imd_validation.csv`).
+(p = 0.002) with the IMD crime domain score (`imd_validation.csv`). This is indicative only:
+the scores are approximate values typed into `imd_validation.py`, not read from the published
+file, and the IMD crime domain is itself built from police-recorded crime (2016/17 and
+2017/18). See Limitations.
 
 ### 4.2 Neighbourhoods
 
@@ -80,6 +83,33 @@ fix described below there are **388 neighbourhoods** across the 15 councils
 (`neighbourhood_features.parquet`). Coverage is uneven: from 64 in County Durham to 3 in
 Norwich (`neighbourhood_scope_fix.csv`), because police forces draw neighbourhoods at very
 different sizes.
+
+The neighbourhoods do not account for exactly the council's recorded crime. Neighbourhood
+crime as a share of the council total (`neighbourhood_coverage.csv`, written by
+`python neighbourhood_coverage.py`):
+
+| Council | Neighbourhoods | Neighbourhood crime as % of council crime |
+|---|---:|---:|
+| Norwich | 3 | 57.4% |
+| Herefordshire, County of | 10 | 93.6% |
+| County Durham | 64 | 98.2% |
+| North Yorkshire | 32 | 98.8% |
+| Leeds | 6 | 99.2% |
+| Leicester | 24 | 99.4% |
+| Cardiff | 28 | 99.5% |
+| Sheffield | 5 | 99.8% |
+| Coventry | 7 | 100.3% |
+| Newcastle upon Tyne | 8 | 100.4% |
+| Wiltshire | 55 | 100.7% |
+| Swansea | 32 | 101.0% |
+| Bristol, City of | 41 | 101.9% |
+| Exeter | 15 | 101.9% |
+| Cornwall | 58 | 108.1% |
+
+**Norwich is the weak case:** its three neighbourhoods hold 57.4% of the council's recorded
+crime, so its neighbourhood view leaves out a large part of the city. A neighbourhood is
+assigned whole to the council that contains its centroid, which is also why some councils
+come out above 100%.
 
 Each neighbourhood is labelled High, Moderate or Lower Crime by where its average monthly
 crime count falls within its own council (cut at the 33rd and 66th percentiles).
@@ -127,15 +157,21 @@ each scored 1 to 3 months ahead (`forecast_baseline_overall.csv`, per council in
 
 | Method | Mean MAE (crimes/month) | MAE as % of an average month | Councils where best |
 |---|---:|---:|---:|
-| Linear trend, last 10 months (the app's method) | 477.3 | 13.5% | 0 |
-| Linear trend, all months | 330.0 | 9.7% | 1 |
-| Last value (next month = this month) | 295.6 | 8.4% | 3 |
-| Seasonal naive (same month last year) | 216.0 | 6.4% | 11 |
+| Linear trend, last 10 months (the app's method) | 477.3 | 13.52% | 0 |
+| Linear trend, all months | 330.0 | 9.65% | 1 |
+| Last value (next month = this month) | 295.6 | 8.37% | 3 |
+| Seasonal naive (same month last year) | 216.0 | 6.35% | 11 |
 
 Reading: the linear trend is the worst of the four and is beaten by "same month last year"
 in most councils. Recorded crime is seasonal, and a straight line cannot represent that. The
-app shows the baseline error next to the linear model's, and its projections should be read
-as a rough direction, not a forecast.
+app shows the baseline error next to the linear model's.
+
+**The app's projections are a backtest, not a forecast.** They are for January to March 2025,
+which is now in the past, so the app shows each one next to the count recorded later
+(`forecast_projection_backtest.csv`, written by `python forecast_evaluation.py`). Of the 45
+projections (15 councils, 3 months), the recorded count fell inside the 95% interval for 22,
+the mean error was 19.7% of the recorded count, and 43 were too high
+(`forecast_projection_backtest_summary.json`).
 
 ## 5. Screenshots
 
@@ -196,7 +232,15 @@ virtual environment, and two notebooks that failed on current Matplotlib are fix
 - **One year of data** for the labels; trend labels come from 12 monthly points.
 - **No non-circular prediction task.** Predicting next quarter's class from this quarter's
   features needs monthly counts per neighbourhood, which the repository does not keep.
-- **The app's projections still use the linear trend**, the weakest method in 4.6.
+- **The app's projections still use the linear trend**, the weakest method in 4.6, and they
+  are for months already past (January to March 2025). They were not refitted on later data.
+  Their "95%" intervals contained the recorded count 22 times out of 45.
+- **The IMD comparison uses approximate scores.** The 15 crime domain scores are hard-coded
+  in `imd_validation.py` (rough equivalents for the two Welsh areas) and were not checked
+  against the published Indices of Deprivation file. The correlation of 0.74 should not be
+  quoted as a validation result until it is recomputed from the published data.
+- **Neighbourhoods do not cover every council equally.** See the coverage table in 4.2:
+  Norwich's three neighbourhoods hold 57% of the council's recorded crime.
 - **Recorded crime is not crime.** It reflects reporting and recording practice.
 
 ## 8. Run it

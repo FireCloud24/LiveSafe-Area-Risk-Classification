@@ -1,0 +1,16 @@
+la_name,neighbourhoods,neighbourhood_avg_monthly_crimes,council_avg_monthly_crimes,coverage_pct
+Norwich,3,879.5,1533.2,57.4
+"Herefordshire, County of",10,952.6,1018.0,93.6
+County Durham,64,4957.2,5047.0,98.2
+North Yorkshire,32,3510.4,3552.3,98.8
+Leeds,6,9254.9,9325.8,99.2
+Leicester,24,4148.0,4174.2,99.4
+Cardiff,28,3698.5,3717.1,99.5
+Sheffield,5,5613.9,5622.4,99.8
+Coventry,7,3412.8,3402.8,100.3
+Newcastle upon Tyne,8,3897.4,3882.8,100.4
+Wiltshire,55,2627.1,2607.8,100.7
+Swansea,32,1921.7,1902.8,101.0
+"Bristol, City of",41,5801.1,5691.5,101.9
+Exeter,15,1296.3,1272.2,101.9
+Cornwall,58,3300.5,3054.1,108.1

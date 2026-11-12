@@ -169,7 +169,7 @@
         <div class="source-desc">
           Local Authority District boundary polygons (LAD 2024 boundaries, EPSG:4326 coordinate system).
           Used to query the Police API for crimes within each area, calculate geographic centroids
-          for weather lookups, and define the 388 neighbourhoods via police force boundaries.
+          for weather lookups, and assign each of the 388 police neighbourhoods to a council by its centroid.
         </div>
         <span class="source-tag">geoportal.statistics.gov.uk — free, open licence</span>
       </div>
@@ -180,10 +180,11 @@
       <div>
         <div class="source-name">ONS Index of Multiple Deprivation 2019</div>
         <div class="source-desc">
-          Used for external validation only — not used in building the classification system.
-          The IMD crime domain scores are compared against LiveSafe's crime intensity rankings
-          using Spearman rank correlation to verify the system captures real patterns.
-          Result: ρ = 0.74 (strong positive, p &lt; 0.01).
+          Used for comparison only — not used in building the classification system.
+          IMD crime domain scores are compared with LiveSafe's crime intensity ranking using
+          Spearman rank correlation (ρ = 0.74, p &lt; 0.01, 15 areas). The scores are approximate
+          values typed into <code>imd_validation.py</code>, not the published file, so the result
+          is indicative only.
         </div>
         <span class="source-tag">MHCLG — English Indices of Deprivation 2019</span>
       </div>
@@ -321,7 +322,7 @@
       <span class="lim-icon">🔮</span>
       <div>
         <div class="lim-title">Forecasts have wide uncertainty ranges</div>
-        <div class="lim-desc">The linear regression forecasts show 95% confidence intervals that are deliberately wide. This is honest — forecasting crime from 12 data points carries high uncertainty. Treat projections as indicative direction, not precise predictions.</div>
+        <div class="lim-desc">The linear regression forecasts show 95% confidence intervals that are deliberately wide. Each line is fitted to 10 monthly data points, which carries high uncertainty, and the projected months (January to March 2025) are now in the past. The Analysis page shows them as a backtest next to the recorded counts. Treat them as an indication of direction, not as predictions.</div>
       </div>
     </div>
   </div>

@@ -204,9 +204,9 @@
           </span>
           {% endif %}
           {% if neighbourhood.rf_predicted_class == neighbourhood.neigh_intensity %}
-          <span style="font-size:0.68rem;color:#4caf7d;" title="ML agrees with rule-based classification">✓ agrees</span>
+          <span style="font-size:0.68rem;color:#4caf7d;" title="Out-of-fold Random Forest prediction agrees with the rule-based label">✓ agrees</span>
           {% else %}
-          <span style="font-size:0.68rem;color:#f0b429;" title="ML disagrees with rule-based classification">≠ differs</span>
+          <span style="font-size:0.68rem;color:#f0b429;" title="Out-of-fold Random Forest prediction differs from the rule-based label">≠ differs</span>
           {% endif %}
         </div>
         {% endif %}
@@ -393,17 +393,21 @@
 
       {% if area_projections %}
       <div class="projections-strip">
-        <span class="projections-lbl">3-month projection:</span>
+        <span class="projections-lbl">Backtest, projected then recorded:</span>
         {% for proj in area_projections %}
         <div class="proj-item">
-          <span class="proj-month">+{{ proj.months_ahead }}mo</span>
+          <span class="proj-month">{{ {'2025-01':'Jan 2025','2025-02':'Feb 2025','2025-03':'Mar 2025'}.get(proj.month_label, proj.month_label) }}</span>
           <span class="proj-val">{{ proj.predicted_crimes | round(0) | int }}</span>
           <span class="proj-ci">{{ proj.ci_lower | round(0) | int }}–{{ proj.ci_upper | round(0) | int }}</span>
+          {% if proj.actual_crimes is defined and proj.actual_crimes is not none %}
+          <span class="proj-ci" style="{% if proj.inside_interval %}color:#4caf7d;{% else %}color:#f06060;{% endif %}">recorded {{ proj.actual_crimes | round(0) | int }}</span>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
       <div style="font-size:0.72rem;color:var(--slate);margin-top:0.5rem;">
-        95% confidence intervals shown. Wide ranges reflect the limitation of 12-month training data.
+        These months are in the past: this is a backtest, not a forecast. Each projection comes from a line
+        fitted to 10 months (Jan-Oct 2024), shown with its 95% interval and the count recorded later.
       </div>
       {% endif %}
     </div>
