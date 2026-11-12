@@ -290,13 +290,12 @@ def main():
     print(f"\n{'='*60}")
     print("KEY TAKEAWAYS FOR YOUR REPORT:")
     print(f"{'='*60}")
-    print(f"1. Mean cross-validated accuracy: {fold_scores.mean():.1%}")
+    print(f"1. Mean cross-validated agreement with the rule label: {fold_scores.mean():.1%}")
     print(f"2. Top feature: {importance_df.iloc[0]['feature']} "
           f"({importance_df.iloc[0]['importance_pct']:.1f}%)")
-    print(f"3. If accuracy is high (>80%), your rule-based labels capture")
-    print(f"   genuine patterns in the data that ML can also learn.")
-    print(f"4. Feature importance shows which variables drive classification")
-    print(f"   — compare this to your rule-based threshold choices.")
+    print(f"3. The label is computed from avg_monthly_crimes, which is also a feature,")
+    print(f"   so this is agreement with the rule, not predictive accuracy.")
+    print(f"4. See Notebook 1 for the baseline and the ablation without the crime count.")
     print("\nDone.")
 
 

@@ -148,15 +148,15 @@
   <div class="ml-section-hdr">
     <span class="ml-num">ML·02</span>
     <h2 class="ml-title">Random Forest — Feature Importance</h2>
-    <span class="ml-badge">Supervised · 5-fold CV · 388 neighbourhoods</span>
+    <span class="ml-badge">Consistency check · 5-fold CV · 388 neighbourhoods</span>
   </div>
   <div class="what-this-means">
-    A Random Forest is trained to predict each neighbourhood's crime
-    intensity label (High / Moderate / Lower Crime) using 4 numerical features.
-    <strong>Feature importance</strong> reveals which variables matter most — if
-    <code>avg_monthly_crimes</code> scores highest, the rule-based thresholds are well-calibrated.
-    <strong>Cross-validation accuracy</strong> tells us how reliably the model learns the same
-    patterns as the rule-based system. High accuracy = the labels capture real structure in the data.
+    This is a <strong>consistency check, not a prediction</strong>. Each neighbourhood's label
+    (High / Moderate / Lower Crime) is defined by a rule: its average monthly crime count ranked
+    within its council. A Random Forest given that same crime count is asked to reproduce the label.
+    The figure on the right is therefore <strong>agreement with the rule</strong>: it says how well a
+    model can re-learn the thresholds, not how well it can foresee crime. Without the crime count
+    the models fall to near chance, so the other features carry little information about the label.
   </div>
 
   {% if rf_importance_json %}
@@ -168,19 +168,15 @@
     <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; gap:1rem;">
       <div class="accuracy-big">
         <span class="accuracy-big-val">{{ rf_accuracy }}%</span>
-        <div class="accuracy-big-lbl">5-Fold Cross-Validated Accuracy</div>
+        <div class="accuracy-big-lbl">Agreement with the rule-based label (5-fold CV)</div>
         <div style="font-size:0.78rem;color:var(--mist);margin-top:0.5rem;">
-          {% if rf_accuracy and rf_accuracy >= 75 %}
-            Strong result — the ML model learns the same patterns as the rule-based labels,
-            confirming those labels capture genuine structure.
-          {% else %}
-            Moderate result — some patterns overlap between the rule-based and ML approach.
-          {% endif %}
+          The label is computed from one of the model's own inputs, so this is not a measure
+          of predictive accuracy. It is below 100% because the thresholds differ by council.
         </div>
       </div>
       {% if rf_fold_scores_json %}
       <div>
-        <div class="section-title">Per-fold accuracy</div>
+        <div class="section-title">Per-fold agreement with the rule label</div>
         <canvas id="chartCvFolds" height="100"></canvas>
       </div>
       {% endif %}
