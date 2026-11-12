@@ -1,6 +1,22 @@
-pandas>=2.0.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-pyarrow>=12.0.0
+# Data and modelling
+pandas>=2.0,<3
+numpy>=1.24,<3
+scikit-learn>=1.3,<2
+scipy>=1.10,<2
+pyarrow>=12
+shapely>=2.0,<3
+
+# Plots
+matplotlib>=3.7,<4
+seaborn>=0.12,<1
+
+# Web app
+flask>=2.3,<4
+
+# Weather download (weather.py)
+meteostat>=1.6,<2
+
+# Tests and notebooks
+pytest>=7
+nbconvert>=7
+ipykernel>=6
