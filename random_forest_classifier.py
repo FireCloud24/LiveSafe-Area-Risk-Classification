@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -300,4 +301,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # The report prints bar characters; make that work on Windows consoles too.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     main()

@@ -1,16 +1,16 @@
 la_name,total_neighbourhoods,global_anomalies,global_anomaly_pct,within_la_anomalies
-Leeds,21,20,95.2,2
-Sheffield,18,14,77.8,0
-Newcastle upon Tyne,35,13,37.1,4
-Coventry,89,21,23.6,9
-County Durham,71,5,7.0,7
-Swansea,203,13,6.4,21
-Cardiff,203,13,6.4,21
-Leicester,66,4,6.1,7
-North Yorkshire,36,2,5.6,4
-"Bristol, City of",123,6,4.9,13
-Cornwall,213,5,2.3,22
-Exeter,213,5,2.3,22
-Norwich,49,1,2.0,5
-Wiltshire,105,1,1.0,11
-"Herefordshire, County of",82,0,0.0,9
+Leeds,6,6,100.0,0
+Sheffield,5,5,100.0,0
+Coventry,7,3,42.9,0
+Newcastle upon Tyne,8,2,25.0,0
+Leicester,24,3,12.5,3
+Swansea,32,4,12.5,4
+Cardiff,28,3,10.7,3
+"Bristol, City of",41,3,7.3,4
+Exeter,15,1,6.7,0
+Cornwall,58,1,1.7,6
+County Durham,64,0,0.0,7
+"Herefordshire, County of",10,0,0.0,0
+North Yorkshire,32,0,0.0,4
+Norwich,3,0,0.0,0
+Wiltshire,55,0,0.0,6

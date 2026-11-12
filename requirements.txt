@@ -7,7 +7,7 @@ pyarrow>=12
 shapely>=2.0,<3
 
 # Plots
-matplotlib>=3.7,<4
+matplotlib>=3.9,<4
 seaborn>=0.12,<1
 
 # Web app

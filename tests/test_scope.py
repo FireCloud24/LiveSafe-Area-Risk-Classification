@@ -15,6 +15,12 @@ from settings import BOUNDARIES_FILE, LA_CODES, PROCESSED_DIR
 NEIGHBOURHOOD_TABLES = [
     "neighbourhood_features.parquet",
     "neighbourhood_classified.parquet",
+    "neighbourhood_ml_classified.parquet",
+]
+# Derived tables without centroids: they must list exactly the same neighbourhoods.
+DERIVED_TABLES = [
+    "neighbourhood_anomalies.parquet",
+    "neighbourhood_clusters.parquet",
 ]
 
 
@@ -56,3 +62,21 @@ def test_no_neighbourhood_is_counted_under_two_councils(table):
         f"{len(duplicated)} rows in {table} are the same neighbourhood listed under "
         f"more than one council: {pairs}"
     )
+
+
+@pytest.mark.parametrize("table", DERIVED_TABLES)
+def test_derived_tables_list_the_same_neighbourhoods(table):
+    key = ["la_code", "neighbourhood_id"]
+    base = pd.read_parquet(PROCESSED_DIR / "neighbourhood_features.parquet")[key]
+    derived = pd.read_parquet(PROCESSED_DIR / table)[key]
+    assert not derived.duplicated().any()
+    assert set(map(tuple, derived.values)) == set(map(tuple, base.values))
+
+
+def test_anomaly_summary_has_no_duplicated_council_rows():
+    summary = pd.read_csv(PROCESSED_DIR / "anomaly_summary.csv")
+    features = pd.read_parquet(PROCESSED_DIR / "neighbourhood_features.parquet")
+    assert summary["la_name"].is_unique
+    counts = features.groupby("la_name").size()
+    assert dict(zip(summary["la_name"], summary["total_neighbourhoods"])) == counts.to_dict()
+    assert int(summary["total_neighbourhoods"].sum()) == len(features)
