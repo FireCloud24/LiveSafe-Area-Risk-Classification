@@ -71,3 +71,22 @@ def test_summarise_reports_one_row_per_area_with_a_best_method():
     assert summary.loc["Trend", "best_method"] in {"linear_trend_10m", "linear_trend_all"}
     assert summary.loc["Season", "best_method"] == "seasonal_naive"
     assert summary.loc["Trend", "n_forecasts"] == 16 * 3
+
+
+def test_backtest_joins_projections_to_recorded_months():
+    from forecast_evaluation import backtest_projections, backtest_summary
+    projections = pd.DataFrame({
+        "area": ["A", "A", "B"], "months_ahead": [1, 2, 1],
+        "month_label": ["2025-01", "2025-02", "2025-01"],
+        "predicted_crimes": [110.0, 120.0, 50.0], "ci_lower": [90.0, 100.0, 40.0],
+        "ci_upper": [130.0, 140.0, 60.0]})
+    history = pd.DataFrame({"la_name": ["A", "A", "B"], "month": ["2025-01", "2024-12", "2025-01"],
+                            "total_crimes": [100, 999, 75]})
+    out = backtest_projections(projections, history)
+    assert out["actual_crimes"].tolist()[0] == 100 and pd.isna(out["actual_crimes"].tolist()[1])
+    assert out["abs_error"].tolist()[0] == 10 and out["abs_error"].tolist()[2] == 25
+    assert out["inside_interval"].tolist()[0] is True or out["inside_interval"].tolist()[0] == True
+    assert out["inside_interval"].tolist()[2] == False
+    summary = backtest_summary(out)
+    assert summary["n_projections"] == 3 and summary["n_scored"] == 2
+    assert summary["n_inside_interval"] == 1 and summary["mae"] == 17.5

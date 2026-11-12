@@ -94,3 +94,50 @@ def summarise(errors: pd.DataFrame) -> pd.DataFrame:
         lambda g: len(g) // g["method"].nunique(), include_groups=False)
     out["best_method"] = mae.idxmin(axis=1)
     return out.reset_index()
+
+
+def backtest_projections(projections: pd.DataFrame, history: pd.DataFrame) -> pd.DataFrame:
+    """Compare stored projections with what was recorded afterwards.
+
+    `projections` has one row per area and month (area, month_label, predicted_crimes,
+    ci_lower, ci_upper). `history` has the recorded monthly totals (la_name, month,
+    total_crimes). Months with no recorded total keep a missing `actual_crimes`.
+    """
+    actual = history.rename(columns={"la_name": "area", "month": "month_label",
+                                     "total_crimes": "actual_crimes"})
+    out = projections.merge(actual[["area", "month_label", "actual_crimes"]],
+                            on=["area", "month_label"], how="left", validate="one_to_one")
+    out["abs_error"] = (out["predicted_crimes"] - out["actual_crimes"]).abs().round(1)
+    out["pct_error"] = (out["abs_error"] / out["actual_crimes"] * 100).round(1)
+    known = out["actual_crimes"].notna()
+    out["inside_interval"] = pd.NA
+    out.loc[known, "inside_interval"] = (
+        out.loc[known, "actual_crimes"].between(out.loc[known, "ci_lower"], out.loc[known, "ci_upper"]))
+    return out
+
+
+def backtest_summary(backtest: pd.DataFrame) -> dict:
+    scored = backtest.dropna(subset=["actual_crimes"])
+    return {
+        "months": sorted(scored["month_label"].unique().tolist()),
+        "n_projections": int(len(backtest)),
+        "n_scored": int(len(scored)),
+        "n_inside_interval": int(scored["inside_interval"].astype(bool).sum()),
+        "mae": round(float(scored["abs_error"].mean()), 1),
+        "mean_pct_error": round(float(scored["pct_error"].mean()), 1),
+        "n_predicted_above_actual": int((scored["predicted_crimes"] > scored["actual_crimes"]).sum()),
+    }
+
+
+if __name__ == "__main__":
+    import json
+    from pathlib import Path
+
+    processed = Path(__file__).parent / "data" / "processed"
+    result = backtest_projections(pd.read_csv(processed / "forecast_projections.csv"),
+                                  pd.read_csv(processed / "crime_monthly_history.csv"))
+    result.to_csv(processed / "forecast_projection_backtest.csv", index=False)
+    summary = backtest_summary(result)
+    (processed / "forecast_projection_backtest_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+    print(result.to_string(index=False))
+    print(json.dumps(summary, indent=2))

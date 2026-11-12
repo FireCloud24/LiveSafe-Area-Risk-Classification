@@ -1,0 +1,13 @@
+{
+  "months": [
+    "2025-01",
+    "2025-02",
+    "2025-03"
+  ],
+  "n_projections": 45,
+  "n_scored": 45,
+  "n_inside_interval": 22,
+  "mae": 700.8,
+  "mean_pct_error": 19.7,
+  "n_predicted_above_actual": 43
+}
